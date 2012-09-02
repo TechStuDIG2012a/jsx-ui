@@ -529,6 +529,51 @@ class Label extends View {
   }
 }
 
+class ProgressView extends View {
+  var _max : number = 100;
+  var _value : number = 0;
+  
+  function constructor() {
+  }
+
+  function constructor(max : number) {
+    this.setMax(max);
+  }
+
+  function constructor(max : number, value : number) {
+    this.setMax(max);
+    this.setValue(value);
+  }
+
+  function progress(diff : number) : void {
+    this._value += diff;
+    if (this._value >= this._max) {
+      this._value = this._max;
+    }
+  }
+
+  function setMax(max : number) : void {
+    this._max = max;
+  }
+
+  function setValue(value : number) : void {
+    this._value = value;
+  }
+
+  override function _toElement() : web.HTMLProgressElement {
+    // assert this._content != null;
+    // var element = super._toElement(); // <div>
+    var element = web.dom.document.createElement("progress") as web.HTMLProgressElement;
+
+    var style = element.style;
+    // style.max = this._max;
+    // style.value = this._value;
+
+    return element;
+  }
+
+}
+
 class Button extends Control {
 
   // FIXME KAZUHO circular reference
