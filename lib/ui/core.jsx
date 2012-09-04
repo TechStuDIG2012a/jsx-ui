@@ -631,6 +631,7 @@ class ProgressView extends View {
 class MenuView extends View {
   var _ddNum : number;
   var _ddNodes = [] : Array.<web.Node>;
+  var _handlers = [] : Array.<function(: web.Event) : void>;
 
   function constructor (nodeNum : number) {
     this._ddNum = nodeNum;
@@ -642,6 +643,11 @@ class MenuView extends View {
   function setDDText(nodeIndex : number, nodeText : string) : void {
     this._ddNodes[nodeIndex] = Util.createTextNode(nodeText);
   }
+
+  function setHandler(index : number, 
+		      handler : function (: web.Event) : void) : void {
+    this._handlers[index] = handler;
+  }
   
   override function _toElement() : web.HTMLElement {
     var nav : web.HTMLElement = Util.createElement("nav");
@@ -652,6 +658,7 @@ class MenuView extends View {
       dds.push(Util.createElement("dd"));
             
       dds[i].appendChild(this._ddNodes[i]);
+      dds[i].onclick = this._handlers[i];
     }
 
     for (var i = 0; i < this._ddNum; i++) {
