@@ -32,10 +32,6 @@ class MyApp extends ui.Application {
 			dom.window.alert("my name is " + t.getValue());
 		});
 		view.addSubview(b);
-
-    var img = new ui.Image('./test.png');
-		var view_img = new ui.ImageView(img);
-    view.addSubview(view_img);
 	}
 }
 
