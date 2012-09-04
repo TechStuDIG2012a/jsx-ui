@@ -10,7 +10,6 @@ class _Main {
 
 			e.preventDefault();
 			e.stopPropagation();
-
 			screen.src = input.value;
 		});
 	}

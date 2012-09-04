@@ -464,8 +464,28 @@ class NavigationBar extends View {
 
 }
 
-class ScrollVIew extends View {
+class ScrollView extends View {
+// //  var delegate : ScrollViewDelegate;
+//   var bounces : boolean = true;
+//   var contentSize : int;
+// //  var indicatorStyle : ScrollViewIndicatorStyle;
+//   var pagingEnabled : boolean;
+// //  var contentOffset : CGPoint;
+//   var minimumZoomScale : number;
+//   var maximumZoomScale : number;
 
+  var _title : string;
+
+   function constructor() { 
+   }
+
+   override function _toElement() : web.HTMLElement {
+     var element = Util.createSpan();
+     element.style.textAlign = "center";
+     var text = Util.createTextNode(this._title);
+     element.appendChild(text);
+     return element;
+   }
 }
 
 class Control extends View {
@@ -525,6 +545,43 @@ class Label extends View {
     Util.applyGradient(style, "linear", "left top", "left bottom", Color.WHITE, Color.LIGHT_GRAY);
 
 
+    return element;
+  }
+}
+
+class Image {
+  var size : Size;
+  var imageRef = web.dom.document.createElement("img") as web.HTMLImageElement;
+  // var imageOrientation:
+  // var scale : number;
+
+  function constructor(imageNamed : string) {
+    this.setImage(imageNamed);
+
+    var self = this;
+    this.imageRef.onload = (e) -> {
+      self.size = new Size(self.imageRef.naturalWidth, self.imageRef.naturalHeight);
+      };
+  }
+
+  function setImage(imageNamed: string) : void {
+    this.imageRef.src = imageNamed; 
+  }
+}
+
+class ImageView extends View {
+  var _image : Image;
+
+  function constructor(image : Image) {
+    this._image = image;
+  }
+
+  override function _toElement() : web.HTMLElement {
+    this._image.imageRef != null;
+
+    // var element = super._toElement(); // <div>
+    // element.appendChild(this._image.imageRef);
+    var element = this._image.imageRef;
     return element;
   }
 }
