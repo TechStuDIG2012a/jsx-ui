@@ -262,6 +262,60 @@ class TabBarController extends ViewController {
   }
 }
 
+class SideMenuViewController extends ViewController {
+  var _sideMenu : View = null;
+  var _section : web.HTMLElement = null;
+  var _dl : web.HTMLDListElement = null;
+  var _dd1 : web.HTMLAreaElement = null;
+  var _dd2 : web.HTMLAreaElement = null;
+
+  function constructor() {
+    this._section = Util.createElement("section");
+    this._dl = Util.createElement("dl") as web.HTMLDListElement;
+    this._dd1 = Util.createElement("dd") as web.HTMLAreaElement;
+    this._dd2 = Util.createElement("dd") as web.HTMLAreaElement;
+  }
+  
+  function getSideMenu() : View {
+    return this._sideMenu;
+  }
+
+  function setSideMenu(sideMenu : View) : void {
+    this._sideMenu = sideMenu;
+
+    this._dl.appendChild(this._dd1);
+    this._dl.appendChild(this._dd2);
+    this._section.appendChild(this._dl);
+
+
+
+    this._section.id = "wrapper";
+    this._dl.id = "panelContainer";
+    this._dd1.id = "panel1";
+    this._dd2.id = "panel2";
+    
+    var sectionStyle = this._section.style;
+    var dlStyle = this._dl.style;
+    var ddStyle1 = this._dd1.style;
+    var ddStyle2 = this._dd2.style;
+
+    var innerWidth = Platform.getWidth();
+
+    sectionStyle.width = "100%";
+    sectionStyle.height = "auto";
+    sectionStyle.overflow = "hidden";
+
+    dlStyle.webkitTransition = "-webkit-transform ease";
+    dlStyle.width = (2 * innerWidth) as string + "px";
+    
+    ddStyle1.float = "left";
+    ddStyle1.width = innerWidth as string + "px";
+    ddStyle2.float = "left";
+    ddStyle2.width = innerWidth as string + "px";
+  }
+
+  
+}
 
 mixin Appearance {
   var _element : web.HTMLElement = null;
@@ -570,6 +624,78 @@ class ProgressView extends View {
     // style.value = this._value;
 
     return element;
+  }
+
+}
+
+class MenuView extends View {
+  var _ddNum : number;
+  var _ddNodes = [] : Array.<web.Node>;
+
+  function constructor (nodeNum : number) {
+    this._ddNum = nodeNum;
+    for (var i = 0; i < this._ddNum; i++) {
+      this._ddNodes.push(Util.createTextNode(i as string));
+    }
+  }
+
+  function setDDText(nodeIndex : number, nodeText : string) : void {
+    this._ddNodes[nodeIndex] = Util.createTextNode(nodeText);
+  }
+  
+  override function _toElement() : web.HTMLElement {
+    var nav : web.HTMLElement = Util.createElement("nav");
+    var dl : web.HTMLDListElement = Util.createElement("dl") as web.HTMLDListElement;
+    var dds = [] : Array.<web.HTMLElement>;
+
+    for (var i = 0; i < this._ddNum; i++) {
+      dds.push(Util.createElement("dd"));
+            
+      dds[i].appendChild(this._ddNodes[i]);
+    }
+
+    for (var i = 0; i < this._ddNum; i++) {
+      dl.appendChild(dds[i]);
+    }
+    
+    nav.appendChild(dl);
+   
+    var navStyle = nav.style;
+    navStyle.width = "95%";
+    navStyle.margin = "3%";
+    navStyle.height = "auto";
+    navStyle.overflow = "hidden";
+    navStyle.marginBottom = "40px";
+
+    var dlStyle = dl.style;
+    dlStyle.width = "100%";
+    dlStyle.height = "100%";
+    dlStyle.overflow = "hidden";
+
+    for (var i = 0; i < this._ddNum; i++) {
+      var ddStyle = dds[i].style;
+      ddStyle.width = "92%";
+      ddStyle.backgroundColor = "#FFFFFF";
+      ddStyle.border = "1px solid #999999";
+      ddStyle.padding = "10px";
+      ddStyle.color = "#222222";
+      ddStyle.display = "block";
+      ddStyle.fontSize = "14px";
+      ddStyle.fontWeight = "bold";
+      if (i != this._ddNum - 1) {
+	ddStyle.marginBottom = "-1px";
+      }
+      if (i == 0) {
+	ddStyle.borderTopLeftRadius = "8px";
+	ddStyle.borderTopRightRadius = "8px";
+      }
+      if (i == this._ddNum - 1) {
+	ddStyle.borderBottomLeftRadius = "8px";
+	ddStyle.borderBottomRightRadius = "8px";
+      }
+    }
+
+    return nav;
   }
 
 }
