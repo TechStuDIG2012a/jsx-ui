@@ -287,8 +287,6 @@ class SideMenuViewController extends ViewController {
     this._dl.appendChild(this._dd2);
     this._section.appendChild(this._dl);
 
-
-
     this._section.id = "wrapper";
     this._dl.id = "panelContainer";
     this._dd1.id = "panel1";
@@ -628,6 +626,77 @@ class ProgressView extends View {
 
 }
 
+class WideView extends View {
+  var _mainView : View = null;
+  var _sideMenuView : View = null;
+  var _section : web.HTMLElement = Util.createElement("section");
+  var _dl : web.HTMLDListElement = Util.createElement("dl") as web.HTMLDListElement;
+  var _dd1 : web.HTMLElement = Util.createElement("dd") as web.HTMLElement;
+  var _dd2 : web.HTMLElement = Util.createElement("dd") as web.HTMLElement;
+
+
+  function constructor() {
+  }
+  
+  function getDL() : web.HTMLDListElement {
+    return this._dl;
+  }
+
+  function getSideMenuView() : View {
+    return this._sideMenuView;
+  }
+
+  function setSideMenuView(sideMenuView : View) : void {
+    this._sideMenuView = sideMenuView;
+  }
+  
+  function getMainView() : View {
+    return this._mainView;
+  }
+
+  function setMainView(mainView : View) : void {
+    this._mainView = mainView;
+  }
+
+  override function _toElement() : web.HTMLElement {
+
+    this._dd1.appendChild(this._sideMenuView.getElement());
+    this._dd2.appendChild(this._mainView.getElement());
+
+    this._dl.appendChild(this._dd1);
+    this._dl.appendChild(this._dd2);
+    this._section.appendChild(this._dl);
+
+    this._section.id = "wrapper";
+    this._dl.id = "panelContainer";
+    this._dd1.id = "panel1";
+    this._dd2.id = "panel2";
+    
+    var sectionStyle = this._section.style;
+    var dlStyle = this._dl.style;
+    var ddStyle1 = this._dd1.style;
+    var ddStyle2 = this._dd2.style;
+
+    var innerWidth = Platform.getWidth();
+
+    sectionStyle.width = "100%";
+    sectionStyle.height = "auto";
+    sectionStyle.overflow = "hidden";
+
+    dlStyle.webkitTransition = "-webkit-transform ease";
+    dlStyle.width = (2 * innerWidth) as string + "px";
+    
+    ddStyle1.float = "left";
+    ddStyle1.width = innerWidth as string + "px";
+    ddStyle2.float = "left";
+    ddStyle2.width = innerWidth as string + "px";
+
+    return this._section;
+  }
+
+  
+}
+
 class MenuView extends View {
   var _ddNum : number;
   var _ddNodes = [] : Array.<web.Node>;
@@ -672,7 +741,9 @@ class MenuView extends View {
     navStyle.margin = "3%";
     navStyle.height = "auto";
     navStyle.overflow = "hidden";
-    navStyle.marginBottom = "40px";
+    navStyle.marginBottom = "30px";
+    // navStyle.textAlign = "right";
+    // navStyle.float = "right";
 
     var dlStyle = dl.style;
     dlStyle.width = "100%";
