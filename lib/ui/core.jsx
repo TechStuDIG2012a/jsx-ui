@@ -465,26 +465,48 @@ class NavigationBar extends View {
 }
 
 class ScrollView extends View {
- //  var delegate : ScrollViewDelegate;
    var bounces : boolean = true;
-   var contentSize : int;
- //  var indicatorStyle : ScrollViewIndicatorStyle;
+   var _contentSize : Size;
    var pagingEnabled : boolean;
- //  var contentOffset : CGPoint;
    var minimumZoomScale : number;
    var maximumZoomScale : number;
+   var _x : int;
+   var _y : int;
 
-  var _title : string;
+   var _title : string;
 
    function constructor() { 
    }
 
+   function setContentSize(size : Size) : void {
+      this._contentSize = size;
+   }
+
    override function _toElement() : web.HTMLElement {
-     var element = Util.createSpan();
-     element.style.textAlign = "center";
-     var text = Util.createTextNode(this._title);
-     element.appendChild(text);
-     return element;
+      var block = Util.createDiv();
+      var style = block.style;
+
+      style.backgroundColor = this._backgroundColor.toString();
+      /* style.width = "auto"; */
+
+      if (this._subviews.length != 0) {
+         style.webkitTransitionProperty = 'top';
+         style.webkitTransitionDuration = '2s';
+         style.position = 'absolute';
+         style.top = '0px';
+
+         var prevX = 0;
+         var prevY = 0;
+         block.addEventListener('click', (e) -> {
+            // Unknown Error
+            var me = e as web.MouseEvent;
+         });
+      }
+
+      this._subviews.forEach( (view) -> {
+         block.appendChild(view.getElement());
+      });
+      return block;
    }
 }
 
