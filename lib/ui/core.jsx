@@ -337,10 +337,10 @@ class View implements Responder, Appearance {
   // Controlls the viwwa and subviews
 
   function show() : void {
-    this.getElement().style.display = "none";
+    this.getElement().style.display = "default";
   }
   function hide() : void {
-    this.getElement().style.display = "default";
+    this.getElement().style.display = "none";
   }
 
   function bringSubviewToFront(subview : View) : void {
@@ -465,14 +465,14 @@ class NavigationBar extends View {
 }
 
 class ScrollView extends View {
-// //  var delegate : ScrollViewDelegate;
-//   var bounces : boolean = true;
-//   var contentSize : int;
-// //  var indicatorStyle : ScrollViewIndicatorStyle;
-//   var pagingEnabled : boolean;
-// //  var contentOffset : CGPoint;
-//   var minimumZoomScale : number;
-//   var maximumZoomScale : number;
+ //  var delegate : ScrollViewDelegate;
+   var bounces : boolean = true;
+   var contentSize : int;
+ //  var indicatorStyle : ScrollViewIndicatorStyle;
+   var pagingEnabled : boolean;
+ //  var contentOffset : CGPoint;
+   var minimumZoomScale : number;
+   var maximumZoomScale : number;
 
   var _title : string;
 
@@ -554,18 +554,52 @@ class Image {
   var imageRef = web.dom.document.createElement("img") as web.HTMLImageElement;
   // var imageOrientation:
   // var scale : number;
+  var opacity : number;
 
   function constructor(imageNamed : string) {
-    this.setImage(imageNamed);
+    this.setImageRef(imageNamed);
 
     var self = this;
     this.imageRef.onload = (e) -> {
-      self.size = new Size(self.imageRef.naturalWidth, self.imageRef.naturalHeight);
-      };
+      self.setSize(new Size(self.getImageRef().naturalWidth, self.getImageRef().naturalHeight));
+    };
+    this.setOpacity(1.0);
   }
 
-  function setImage(imageNamed: string) : void {
+  function constructor(imageNamed : string, width : int, height : int) {
+    this.setImageRef(imageNamed);
+    this.setSize(new Size(width, height));
+    this.setOpacity(1.0);
+  }
+
+  function constructor(imageNamed : string, size : Size) {
+    this.setImageRef(imageNamed);
+    this.setSize(size);
+    this.setOpacity(1.0);
+  }
+
+  function setImageRef(imageNamed: string) : void {
     this.imageRef.src = imageNamed; 
+  }
+  
+  function getImageRef() : web.HTMLImageElement {
+    return this.imageRef; 
+  }
+
+  function setOpacity(opacity: number) : void {
+    this.opacity = opacity; 
+  }
+
+  function getOpacity() : number {
+    return this.opacity;
+  }
+
+  function setSize(size : Size) : void {
+    this.size = size;
+  }
+
+  function getSize() : Size {
+    return this.size;
   }
 }
 
@@ -577,11 +611,14 @@ class ImageView extends View {
   }
 
   override function _toElement() : web.HTMLElement {
-    this._image.imageRef != null;
+    assert this._image.imageRef != null;
 
-    // var element = super._toElement(); // <div>
-    // element.appendChild(this._image.imageRef);
     var element = this._image.imageRef;
+
+    var style = element.style;
+    // style.height   = this._image.size.height as string + "px";
+    // style.width = this._image.size.width as string + "px";
+    style.opacity = this._image.opacity as string;
     return element;
   }
 }
