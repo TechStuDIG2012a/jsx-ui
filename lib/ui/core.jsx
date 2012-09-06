@@ -57,6 +57,54 @@ class Util {
     return Util.createElement("span");
   }
 
+  static function createFancyButton(anchorText : web.Node, href : string) : web.HTMLElement {
+    var nav = Util.createElement("nav");
+    nav.className = "nav-page";
+    var p = Util.createElement("p") as web.HTMLParagraphElement;
+    p.className = "nav-page-left";
+    var a = Util.createElement("a") as web.HTMLAnchorElement;
+    a.href = href;
+    var span = Util.createSpan();
+
+    // a.appendChild(this._anchorText);
+    span.appendChild(anchorText);
+    a.appendChild(span);
+    p.appendChild(a);
+    nav.appendChild(p);
+    
+    var navStyle = nav.style;
+    var pStyle = p.style;
+    var aStyle = a.style;
+    var spanStyle = span.style;
+
+    navStyle.position = "absolute";
+    navStyle.top = "0";
+    navStyle.left = "0";
+    navStyle.width = "100%";
+
+    pStyle.position = "absolute";
+    pStyle.top = "5px";
+    pStyle.left = "10px";
+
+    spanStyle.display = "block";
+    spanStyle.float = "left";
+    spanStyle.letterSpacing = "-1px";
+    spanStyle.borderWidth = "1px";
+    spanStyle.borderStyle = "solid";
+    spanStyle.borderColor = "#ccc #444 #111 #444";
+    spanStyle.font = "bold 15px/1em Ariel";
+    spanStyle.color = "white";
+    spanStyle.padding = "0.48em 1.0em";
+    spanStyle.textShadow = "rgba(0,0,0,0.45) 0 -1px 0";
+    spanStyle.webkitBoxShadow = "rgba(0,0,0,0.75) 0px 0px 3px";
+    spanStyle.webkitBorderRadius = "7px";
+    spanStyle.background = "transparent -webkit-gradient(linear, left top, left bottom, from(rgba(255,255,255,0.6)), color-stop(0.5, rgba(255,255,255,0.15)), color-stop(0.5, rgba(255,255,255,0.01)), to(transparent))";
+    spanStyle.filter = "progid:DXImageTransform.Microsoft.Gradient(GradientType=0, StartColorstr='#80FFFFFF', EndColorstr='#00FFFFFF')";
+    spanStyle.webkitBackgroundClip = "padding-box";
+
+    return nav;
+  }
+
   static function replaceChildElements(element : web.HTMLElement, content: web.HTMLElement) : void {
     var children = element.childNodes;
     for (var i = 0, l = children.length; i < l; ++i) {
@@ -512,8 +560,71 @@ class TabBarItem extends BarItem {
   }
 }
 
-class NavigationBar extends View {
+class NavigationView extends View {
+  var _title : web.Node = null;
+  var _anchorText : web.Node = null;
+  var _href : string = "";
 
+  function constructor() {
+  }
+
+  function constructor(title : string, anchorText : string, href : string) {
+    this._setTitle(title);
+    this._setButtonText(anchorText);
+    this._href = href;
+  }
+
+  function _setTitle(title : string) : void {
+    this._title = Util.createTextNode(title);
+  }
+
+  function _setTitle(title : web.Node) : void {
+    this._title = title;
+  }
+
+  function _setButtonText(anchorText : string) : void {
+    this._anchorText = Util.createTextNode(anchorText);
+  }
+
+  function _setButtonText(anchorText : web.Node) : void {
+    this._anchorText = anchorText;
+  }
+
+  override function _toElement() : web.HTMLElement {
+    assert this._title != null;
+    assert this._anchorText != null;
+
+    var header = Util.createElement("header") as web.HTMLElement;
+    header.className = "global-header";
+    var h1 = Util.createElement("h1") as web.HTMLHeadingElement;
+    h1.className = "page-heading";
+    var nav = Util.createFancyButton(this._anchorText, this._href);
+
+    h1.appendChild(this._title);
+    header.appendChild(h1);
+    header.appendChild(nav);
+    
+    var headerStyle = header.style;
+    var h1Style = h1.style;
+    
+    headerStyle.borderBottom = Util.borderWithColor(Color.WHITE);
+    headerStyle.height = "44px";
+    headerStyle.lineHeight = "44px";
+    headerStyle.backgroundColor = "#a8a8a8";
+
+    h1Style.margin = "0 auto";
+    h1Style.width = "140px";
+    h1Style.overflow = "hidden";
+    h1Style.color = "#333333";
+    h1Style.fontSize = "16px";
+    h1Style.textAlign = "center";
+    h1Style.whiteSpace = "nowrap";
+    h1Style.textOverflow = "ellipsis";
+    h1Style.textShadow = "0 1px #ffffff";
+
+    return header;
+  }
+  
 }
 
 class ScrollVIew extends View {
@@ -615,7 +726,7 @@ class ProgressView extends View {
   override function _toElement() : web.HTMLProgressElement {
     // assert this._content != null;
     // var element = super._toElement(); // <div>
-    var element = web.dom.document.createElement("progress") as web.HTMLProgressElement;
+    var element = Util.createElement("progress") as web.HTMLProgressElement;
 
     var style = element.style;
     // style.max = this._max;
@@ -776,6 +887,45 @@ class MenuView extends View {
     return nav;
   }
 
+=======
+class H1 extends View {
+  var _content : web.Node = null;
+
+  function constructor() {
+  }
+
+  function constructor(content : string) {
+    this.setText(content);
+  }
+
+  function constructor(content : web.Node) {
+    this.setText(content);
+  }
+
+  function setText(content : string) : void {
+    this._content = Util.createTextNode(content);
+  }
+
+  function setText(content : web.Node) : void {
+    this._content = content;
+  }
+
+  override function _toElement() : web.HTMLHeadingElement {
+    var element = Util.createElement("h1") as web.HTMLHeadingElement;
+
+    element.appendChild(this._content);
+
+    // var style = element.style;
+    // style.color     = this._color.toString();
+    // style.textAlign = this._align;
+    // style.padding = "5px";
+    // style.margin  = "2px";
+
+    // style.borderRadius = "8px";
+    // Util.applyGradient(style, "linear", "left top", "left bottom", Color.WHITE, Color.LIGHT_GRAY);
+    
+    return element;
+  }
 }
 
 class Button extends Control {
