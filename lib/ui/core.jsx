@@ -296,20 +296,14 @@ class View implements Responder, Appearance {
   var _bounds : Rectangle;
   var _alpha : number; 
 
-  // initWithFrameFlag
-  var _initWidthFrame : boolean;
-
   function constructor () {
-    this._initWidthFrame = false;
   }
 
-  // added constructor [UIKit]: initWithFrame
-  function constructor (frame : Rectangle) {
+  function initWithFrame (frame : Rectangle) : void {
     this._frame = frame;
     this._bounds = new Rectangle(0, 0, frame.size.width, frame.size.height);
     this._center = new Point(frame.origin.x + frame.size.width/2,
                              frame.origin.y + frame.size.height/2);
-    this._initWidthFrame = true;
   }
 
   function getBackgroundColor() : Color {
@@ -345,10 +339,10 @@ class View implements Responder, Appearance {
     var block = Util.createDiv();
     var style = block.style;
 
-    style.position = "absolute";
     style.backgroundColor = this._backgroundColor.toString();
 
-    if (this._initWidthFrame) {
+    if (this._frame) {
+      style.position = "absolute";
       style.width = this._bounds.size.width as string + "px";
       style.height = this._bounds.size.height as string + "px";
       style.left = this._frame.origin.x as string + "px";
