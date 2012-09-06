@@ -893,45 +893,6 @@ class MenuView extends View {
     return nav;
   }
 
-=======
-class H1 extends View {
-  var _content : web.Node = null;
-
-  function constructor() {
-  }
-
-  function constructor(content : string) {
-    this.setText(content);
-  }
-
-  function constructor(content : web.Node) {
-    this.setText(content);
-  }
-
-  function setText(content : string) : void {
-    this._content = Util.createTextNode(content);
-  }
-
-  function setText(content : web.Node) : void {
-    this._content = content;
-  }
-
-  override function _toElement() : web.HTMLHeadingElement {
-    var element = Util.createElement("h1") as web.HTMLHeadingElement;
-
-    element.appendChild(this._content);
-
-    // var style = element.style;
-    // style.color     = this._color.toString();
-    // style.textAlign = this._align;
-    // style.padding = "5px";
-    // style.margin  = "2px";
-
-    // style.borderRadius = "8px";
-    // Util.applyGradient(style, "linear", "left top", "left bottom", Color.WHITE, Color.LIGHT_GRAY);
-    
-    return element;
-  }
 }
 
 class Button extends Control {
