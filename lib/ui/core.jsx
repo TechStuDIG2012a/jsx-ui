@@ -58,21 +58,16 @@ class Util {
     return Util.createElement("span");
   }
 
-  static function createFancyButton(anchorText : web.Node, href : string, onclick : function(:web.Event):void) : web.HTMLElement {
+  static function createNavButton(anchorText : web.Node, href : string, onclick : function(:web.Event):void) : web.HTMLElement {
     var nav = Util.createElement("nav");
     nav.className = "nav-page";
     var p = Util.createElement("p") as web.HTMLParagraphElement;
     p.className = "nav-page-left";
     var a = Util.createElement("a") as web.HTMLAnchorElement;
     a.href = href;
-    // var listener = function(e : web.Event) : void {
-    //   cb(new MouseEvent(e));
-    // };
-    // a.addEventListener("click", listener);
     a.onclick = onclick;
     var span = Util.createSpan();
 
-    // a.appendChild(this._anchorText);
     span.appendChild(anchorText);
     a.appendChild(span);
     p.appendChild(a);
@@ -284,6 +279,8 @@ class SuperViewController extends ViewController {
   var _mainView : View;
   var _menuView : View;
   var _cnt = 0;
+  var _navigationView : NavigationView;
+  var _dispWidth = Platform.getWidth();
   
   function constructor() {
   }
@@ -298,21 +295,22 @@ class SuperViewController extends ViewController {
     this._menuView = menu;
     this._cnt = 0;
 
-    this._mainView.getElement().style.webkitTransform = "-webkit-transition:-webkit-transform ease";
-
-    var dispWidth = Platform.getWidth();
-    
-    this._mainView.getElement().onclick = function(e:web.Event) : void {
+    this._navigationView = new NavigationView("Main", "[ ]", "#", function(e:web.Event) : void {
       if (this._cnt == 0) {
-        this._mainView.getElement().style.webkitTransform = "translate3d(" + (dispWidth * 0.8) as string  + "px, 0, 0)";
-        this._mainView.getElement().style.webkitTransitionDuration = "300ms";
-        this._cnt++;
+	this._mainView.getElement().style.webkitTransform = "translate3d(" + (this._dispWidth * 0.8) as string  + "px, 0, 0)";
+	this._mainView.getElement().style.webkitTransitionDuration = "300ms";
+	this._cnt++;
       } else {
-        this._mainView.getElement().style.webkitTransform = "translate3d(0, 0, 0)";
-        this._mainView.getElement().style.webkitTransitionDuration = "300ms";
-        this._cnt--;
+	this._mainView.getElement().style.webkitTransform = "translate3d(0, 0, 0)";
+	this._mainView.getElement().style.webkitTransitionDuration = "300ms";
+	this._cnt--;
       }
-    };
+    });
+
+    this._mainView.getElement().insertBefore(this._navigationView.getElement(), this._mainView.getElement().firstElementChild);
+    this._mainView.getElement().style.webkitTransform = "-webkit-transition:-webkit-transform ease";
+    
+//    this._mainView.getElement().onclick 
 
     this._view.addSubview(this._mainView);
     this._view.addSubview(this._menuView);
@@ -688,7 +686,7 @@ class NavigationView extends View {
     header.className = "global-header";
     var h1 = Util.createElement("h1") as web.HTMLHeadingElement;
     h1.className = "page-heading";
-    var nav = Util.createFancyButton(this._anchorText, this._href, this._onclick);
+    var nav = Util.createNavButton(this._anchorText, this._href, this._onclick);
     h1.appendChild(this._title);
     header.appendChild(h1);
     header.appendChild(nav);
