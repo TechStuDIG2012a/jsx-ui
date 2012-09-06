@@ -135,10 +135,17 @@ class Util {
 /* immutable */ class Point {
   var x : int;
   var y : int;
+  var z : int = 1;
 
   function constructor(x : int, y : int) {
     this.x = x;
     this.y = y;
+  }
+
+  function constructor(x : int, y : int, z : int) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
   }
 }
 
@@ -161,6 +168,11 @@ class Util {
 
   function constructor(x : int, y : int, width : int, height : int) {
     this.origin = new Point(x, y);
+    this.size   = new Size(width, height);
+  }
+
+  function constructor(x : int, y : int, z: int, width : int, height : int) {
+    this.origin = new Point(x, y, z);
     this.size   = new Size(width, height);
   }
 }
@@ -266,6 +278,46 @@ class ViewController implements Responder {
     return this._parentViewController as TabBarController;
   }
 
+}
+
+class SuperViewController extends ViewController {
+  var _mainView : View;
+  var _menuView : View;
+  var _cnt = 0;
+  
+  function constructor() {
+  }
+
+  function constructor(main : View, menu : View) {
+    this.setViewControllers(main, menu);
+  }
+
+  function setViewControllers(main : View, menu : View) : void {
+    this._view = new View();
+    this._mainView = main;
+    this._menuView = menu;
+    this._cnt = 0;
+
+    this._mainView.getElement().style.webkitTransform = "-webkit-transition:-webkit-transform ease";
+
+    var dispWidth = Platform.getWidth();
+    
+    this._mainView.getElement().onclick = function(e:web.Event) : void {
+      if (this._cnt == 0) {
+        this._mainView.getElement().style.webkitTransform = "translate3d(" + (dispWidth * 0.8) as string  + "px, 0, 0)";
+        this._mainView.getElement().style.webkitTransitionDuration = "300ms";
+        this._cnt++;
+      } else {
+        this._mainView.getElement().style.webkitTransform = "translate3d(0, 0, 0)";
+        this._mainView.getElement().style.webkitTransitionDuration = "300ms";
+        this._cnt--;
+      }
+    };
+
+    this._view.addSubview(this._mainView);
+    this._view.addSubview(this._menuView);
+  }
+    
 }
 
 class TabBarController extends ViewController {
@@ -406,9 +458,10 @@ class View implements Responder, Appearance {
 
   function initWithFrame (frame : Rectangle) : void {
     this._frame = frame;
-    this._bounds = new Rectangle(0, 0, frame.size.width, frame.size.height);
+    this._bounds = new Rectangle(0, 0, frame.origin.z, frame.size.width, frame.size.height);
     this._center = new Point(frame.origin.x + frame.size.width/2,
                              frame.origin.y + frame.size.height/2);
+
   }
 
   function getBackgroundColor() : Color {
@@ -452,6 +505,7 @@ class View implements Responder, Appearance {
       style.height = this._bounds.size.height as string + "px";
       style.left = this._frame.origin.x as string + "px";
       style.top = this._frame.origin.y as string + "px";
+      style.zIndex = this._frame.origin.z as string;
       // TODO _centerのCSS操作
 
     } else {
@@ -1094,11 +1148,11 @@ class MenuView extends View {
     nav.appendChild(dl);
    
     var navStyle = nav.style;
-    navStyle.width = "95%";
-    navStyle.margin = "3%";
+    navStyle.width = "100%";
+    navStyle.margin = "0%";
     navStyle.height = "auto";
     navStyle.overflow = "hidden";
-    navStyle.marginBottom = "30px";
+    navStyle.marginBottom = "10px";
     // navStyle.textAlign = "right";
     // navStyle.float = "right";
 
@@ -1118,16 +1172,16 @@ class MenuView extends View {
       ddStyle.fontSize = "14px";
       ddStyle.fontWeight = "bold";
       if (i != this._ddNum - 1) {
-	ddStyle.marginBottom = "-1px";
+      	ddStyle.marginBottom = "-1px";
       }
-      if (i == 0) {
-	ddStyle.borderTopLeftRadius = "8px";
-	ddStyle.borderTopRightRadius = "8px";
-      }
-      if (i == this._ddNum - 1) {
-	ddStyle.borderBottomLeftRadius = "8px";
-	ddStyle.borderBottomRightRadius = "8px";
-      }
+      // if (i == 0) {
+      // 	ddStyle.borderTopLeftRadius = "8px";
+      // 	ddStyle.borderTopRightRadius = "8px";
+      // }
+      // if (i == this._ddNum - 1) {
+      // 	ddStyle.borderBottomLeftRadius = "8px";
+      // 	ddStyle.borderBottomRightRadius = "8px";
+      // }
     }
 
     return nav;
