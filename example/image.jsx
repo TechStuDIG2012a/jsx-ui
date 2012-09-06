@@ -22,21 +22,16 @@ class MyApp extends ui.Application {
     // view.setBackgroundColor(ui.Color.GREEN);
 		top.setView(view);
 
-		var img = new ui.Image('./test.png', 500, 500);
-    log img;
-    log img.getOpacity();
-    log img.getSize();
-    log img.getImageRef();
+		var img = new ui.Image('./test.png');
+		var img_view = new ui.ImageView(img);
+    view.addSubview(img_view);
+    log view;
 
 		var img2 = new ui.Image('./test.png');
-    img2.setOpacity(0.3);
-    log img2;
-    log img2.getSize();
-
-		var view_img = new ui.ImageView(img);
-    view.addSubview(view_img);
-		var view_img2 = new ui.ImageView(img2);
-    view.addSubview(view_img2);
+		var img_view_small = new ui.ImageView(img2);
+    img_view_small.initWithFrame(new ui.Rectangle(0, 0, 50, 50));
+    log img_view_small;
+    view.addSubview(img_view_small);
 	}
 }
 

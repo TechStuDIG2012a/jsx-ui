@@ -887,7 +887,6 @@ class Label extends View {
 class Image {
   var size : Size;
   var imageRef = web.dom.document.createElement("img") as web.HTMLImageElement;
-  // var opacity : number;
 
   function constructor(imageNamed : string) {
     this.setImageRef(imageNamed);
@@ -896,21 +895,8 @@ class Image {
     this.imageRef.onload = (e) -> {
       self.setSize(new Size(self.getImageRef().naturalWidth, self.getImageRef().naturalHeight));
     };
-    // this.setOpacity(1.0);
   }
-
-  // function constructor(imageNamed : string, width : int, height : int) {
-  //   this.setImageRef(imageNamed);
-  //   this.setSize(new Size(width, height));
-  //   this.setOpacity(1.0);
-  // }
-
-  // function constructor(imageNamed : string, size : Size) {
-  //   this.setImageRef(imageNamed);
-  //   this.setSize(size);
-  //   this.setOpacity(1.0);
-  // }
-
+  
   function setImageRef(imageNamed: string) : void {
     this.imageRef.src = imageNamed; 
   }
@@ -918,14 +904,6 @@ class Image {
   function getImageRef() : web.HTMLImageElement {
     return this.imageRef; 
   }
-
-//  function setOpacity(opacity: number) : void {
-//    this.opacity = opacity; 
-//  }
-//
-//  function getOpacity() : number {
-//    return this.opacity;
-//  }
 
   function setSize(size : Size) : void {
     this.size = size;
@@ -947,11 +925,15 @@ class ImageView extends View {
     assert this._image.imageRef != null;
 
     var element = this._image.imageRef;
-
     var style = element.style;
-    // style.height   = this._image.size.height as string + "px";
-    // style.width = this._image.size.width as string + "px";
-    // style.opacity = this._image.opacity as string;
+
+    if (this._frame) {
+      style.width = this._bounds.size.width as string + "px";
+      style.height = this._bounds.size.height as string + "px";
+      style.left = this._frame.origin.x as string + "px";
+      style.top = this._frame.origin.y as string + "px";
+      // TODO _centerのCSS操作
+    }
     return element;
   }
 }
