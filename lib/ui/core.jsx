@@ -6,6 +6,7 @@
  *
  */
 
+import "timer.jsx";
 import "js/web.jsx" into web;
 
 import "./event.jsx";
@@ -190,7 +191,6 @@ class Application implements Responder {
     var style   = element.style;
 
     element.appendChild(this._rootViewController.getView().getElement());
-
     return element;
   }
 
@@ -392,6 +392,25 @@ class View implements Responder, Appearance {
   var _parent : View = null;
   var _subviews = new Array.<View>();
 
+  // added properties 
+  /* frame: super viewの座標系におけるViewの原点とサイズ */
+  var _frame : Rectangle;
+  /* center: super viewの座標系におけるViewの中心 */
+  var _center : Point;
+  /* bounds: ローカル座標系におけるViewの原点とサイズ */
+  var _bounds : Rectangle;
+  var _alpha : number; 
+
+  function constructor () {
+  }
+
+  function initWithFrame (frame : Rectangle) : void {
+    this._frame = frame;
+    this._bounds = new Rectangle(0, 0, frame.size.width, frame.size.height);
+    this._center = new Point(frame.origin.x + frame.size.width/2,
+                             frame.origin.y + frame.size.height/2);
+  }
+
   function getBackgroundColor() : Color {
     return this._backgroundColor;
   }
@@ -414,9 +433,9 @@ class View implements Responder, Appearance {
     view._parent = this;
   }
 
-  function onClick(cb : function(:MouseEvent):void) : void {
+  function onClick(cb : function(:UIMouseEvent):void) : void {
     var listener = function (e : web.Event) : void {
-      cb(new MouseEvent(e));
+      cb(new UIMouseEvent(e));
     };
     this.getElement().addEventListener("click", listener);
   }
@@ -426,7 +445,18 @@ class View implements Responder, Appearance {
     var style = block.style;
 
     style.backgroundColor = this._backgroundColor.toString();
-    style.width = "auto";
+
+    if (this._frame) {
+      style.position = "absolute";
+      style.width = this._bounds.size.width as string + "px";
+      style.height = this._bounds.size.height as string + "px";
+      style.left = this._frame.origin.x as string + "px";
+      style.top = this._frame.origin.y as string + "px";
+      // TODO _centerのCSS操作
+
+    } else {
+      style.width = "auto";
+    }
 
     if (Platform.DEBUG) {
       //style.border = Util.borderWithColor(Color.BLUE);
@@ -438,14 +468,13 @@ class View implements Responder, Appearance {
     return block;
   }
 
-
   // Controlls the viwwa and subviews
 
   function show() : void {
-    this.getElement().style.display = "none";
+    this.getElement().style.display = "default";
   }
   function hide() : void {
-    this.getElement().style.display = "default";
+    this.getElement().style.display = "none";
   }
 
   function bringSubviewToFront(subview : View) : void {
@@ -633,8 +662,165 @@ class NavigationView extends View {
   
 }
 
-class ScrollVIew extends View {
+class ScrollView extends View {
+   var bounces : boolean = true;
+   var _size : Size; // TODO: frameプロパティを実装する
+   var _contentSize : Size;
+   var pagingEnabled : boolean;
+   var minimumZoomScale : number;
+   var maximumZoomScale : number;
+   var _x : int;
+   var _y : int;
+   var _vx : number;
+   var _vy : number;
 
+   var _title : string;
+
+   function constructor() {
+      this._size = new Size(320, 480);
+      this._x = 0;
+      this._y = 0;
+   }
+
+   function setContentSize(size : Size) : void {
+      this._contentSize = size;
+   }
+
+   override function _toElement() : web.HTMLElement {
+      var block = Util.createDiv();
+      var style = block.style;
+
+      style.backgroundColor = this._backgroundColor.toString();
+      style.width = "auto";
+
+      if (this._subviews.length != 0) {
+         style.position = 'relative';
+         style.top = '0px';
+         style.left = '0px';
+
+         var prevX = 0;
+         var prevY = 0;
+         var prevMsTime = (new Date()).getTime();
+         block.addEventListener('mousedown', (e) -> {
+            e.preventDefault();
+
+            var me = e as web.MouseEvent;
+            prevX = me.pageX;
+            prevY = me.pageY;
+
+            var handleMove = function(e : web.Event) : void {
+               e.preventDefault();
+
+               var curMsTime = (new Date()).getTime();
+               var elapsedMs = curMsTime - prevMsTime;
+               prevMsTime = curMsTime;
+
+               var me = e as web.MouseEvent;
+               var diffX = me.pageX - prevX;
+               var diffY = me.pageY - prevY;
+
+               this._vx = diffX / elapsedMs;
+               this._vy = diffY / elapsedMs;
+
+               // TODO: 下側と右側にも対応
+               this._x += (this._x > 0) ? (diffX / 2) : (diffX);
+               this._y += (this._y > 0) ? (diffY / 2) : (diffY);
+
+               style.top = (this._y as string) + 'px';
+               style.left = (this._x as string) + 'px';
+
+               prevX = me.pageX;
+               prevY = me.pageY;
+            };
+
+            block.addEventListener('mousemove', handleMove);
+
+            // バウンドするようなモーションで、表示位置を修正する
+            var backToCorrectPosition = function () : void {
+               var fw = this._size.width;  // frame width
+               var fh = this._size.height; // frame height
+               var cw = this._contentSize.width;  // content width
+               var ch = this._contentSize.height; // content height 
+
+               if (this._x > 0) {
+                  this._x /= 1.1;
+               }
+               if (this._x + cw < fw) {
+                  this._x = (fw - cw) + (this._x + cw - fw) / 1.2;
+               }
+               if (this._y > 0) {
+                  this._y /= 1.1;
+               }
+               if (this._y + ch < fh) {
+                  this._y = (fh - ch) + (this._y + ch - fh) / 1.2;
+               }
+               style.left = (this._x as string) + 'px';
+               style.top = (this._y as string) + 'px';
+
+               if (this._x > 0 || this._y > 0 || this._x + cw < fw || this._y + ch < fh) {
+                  Timer.setTimeout(backToCorrectPosition, 33);
+               }
+            };
+
+            // 速度を減衰させつつスクロールする
+            var decelerating = function () : void {
+               var fw = this._size.width;  // frame width
+               var fh = this._size.height; // frame height
+               var cw = this._contentSize.width;  // content width
+               var ch = this._contentSize.height; // content height 
+
+               this._x += this._vx * 33;
+               this._y += this._vy * 33;
+
+               style.left = (this._x as string) + 'px';
+               style.top = (this._y as string) + 'px';
+
+               log this._vy;
+
+               if (this._x > 0 || this._x + cw < fw) {
+                  this._vx /= 2;
+               } else {
+                  if (Math.abs(this._vx) < 0.01) {
+                     this._vx = 0;
+                  } else if (this._vx < 0) {
+                     this._vx += 0.05;
+                  } else if (this._vx > 0) {
+                     this._vx -= 0.05;
+                  }
+               }
+               if (this._y > 0 || this._y + ch < fh) {
+                  this._vy /= 2;
+               } else {
+                  if (Math.abs(this._vy) < 0.05) {
+                     this._vy = 0;
+                  } else if (this._vy < 0) {
+                     this._vy += 0.05;
+                  } else if (this._vy > 0) {
+                     this._vy -= 0.05;
+                  }
+               }
+
+               if (Math.abs(this._vx) > 0.001 || Math.abs(this._vy) > 0.001) {
+                  Timer.setTimeout(decelerating, 33);
+               } else {
+                  Timer.setTimeout(backToCorrectPosition, 33);
+               }
+            };
+
+
+            block.addEventListener('mouseup', (e) -> {
+               block.removeEventListener('mousemove', handleMove);
+               Timer.setTimeout(decelerating, 33);
+            });
+
+         });
+      }
+
+      this._subviews.forEach( (view) -> {
+         block.appendChild(view.getElement());
+      });
+      return block;
+   }
 }
 
 class Control extends View {
@@ -694,6 +880,78 @@ class Label extends View {
     Util.applyGradient(style, "linear", "left top", "left bottom", Color.WHITE, Color.LIGHT_GRAY);
 
 
+    return element;
+  }
+}
+
+class Image {
+  var size : Size;
+  var imageRef = web.dom.document.createElement("img") as web.HTMLImageElement;
+  // var opacity : number;
+
+  function constructor(imageNamed : string) {
+    this.setImageRef(imageNamed);
+
+    var self = this;
+    this.imageRef.onload = (e) -> {
+      self.setSize(new Size(self.getImageRef().naturalWidth, self.getImageRef().naturalHeight));
+    };
+    // this.setOpacity(1.0);
+  }
+
+  // function constructor(imageNamed : string, width : int, height : int) {
+  //   this.setImageRef(imageNamed);
+  //   this.setSize(new Size(width, height));
+  //   this.setOpacity(1.0);
+  // }
+
+  // function constructor(imageNamed : string, size : Size) {
+  //   this.setImageRef(imageNamed);
+  //   this.setSize(size);
+  //   this.setOpacity(1.0);
+  // }
+
+  function setImageRef(imageNamed: string) : void {
+    this.imageRef.src = imageNamed; 
+  }
+  
+  function getImageRef() : web.HTMLImageElement {
+    return this.imageRef; 
+  }
+
+//  function setOpacity(opacity: number) : void {
+//    this.opacity = opacity; 
+//  }
+//
+//  function getOpacity() : number {
+//    return this.opacity;
+//  }
+
+  function setSize(size : Size) : void {
+    this.size = size;
+  }
+
+  function getSize() : Size {
+    return this.size;
+  }
+}
+
+class ImageView extends View {
+  var _image : Image;
+
+  function constructor(image : Image) {
+    this._image = image;
+  }
+
+  override function _toElement() : web.HTMLElement {
+    assert this._image.imageRef != null;
+
+    var element = this._image.imageRef;
+
+    var style = element.style;
+    // style.height   = this._image.size.height as string + "px";
+    // style.width = this._image.size.width as string + "px";
+    // style.opacity = this._image.opacity as string;
     return element;
   }
 }
