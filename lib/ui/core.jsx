@@ -57,6 +57,54 @@ class Util {
     return Util.createElement("span");
   }
 
+  static function createFancyButton(anchorText : web.Node, href : string) : web.HTMLElement {
+    var nav = Util.createElement("nav");
+    nav.className = "nav-page";
+    var p = Util.createElement("p") as web.HTMLParagraphElement;
+    p.className = "nav-page-left";
+    var a = Util.createElement("a") as web.HTMLAnchorElement;
+    a.href = href;
+    var span = Util.createSpan();
+
+    // a.appendChild(this._anchorText);
+    span.appendChild(anchorText);
+    a.appendChild(span);
+    p.appendChild(a);
+    nav.appendChild(p);
+    
+    var navStyle = nav.style;
+    var pStyle = p.style;
+    var aStyle = a.style;
+    var spanStyle = span.style;
+
+    navStyle.position = "absolute";
+    navStyle.top = "0";
+    navStyle.left = "0";
+    navStyle.width = "100%";
+
+    pStyle.position = "absolute";
+    pStyle.top = "5px";
+    pStyle.left = "10px";
+
+    spanStyle.display = "block";
+    spanStyle.float = "left";
+    spanStyle.letterSpacing = "-1px";
+    spanStyle.borderWidth = "1px";
+    spanStyle.borderStyle = "solid";
+    spanStyle.borderColor = "#ccc #444 #111 #444";
+    spanStyle.font = "bold 15px/1em Ariel";
+    spanStyle.color = "white";
+    spanStyle.padding = "0.48em 1.0em";
+    spanStyle.textShadow = "rgba(0,0,0,0.45) 0 -1px 0";
+    spanStyle.webkitBoxShadow = "rgba(0,0,0,0.75) 0px 0px 3px";
+    spanStyle.webkitBorderRadius = "7px";
+    spanStyle.background = "transparent -webkit-gradient(linear, left top, left bottom, from(rgba(255,255,255,0.6)), color-stop(0.5, rgba(255,255,255,0.15)), color-stop(0.5, rgba(255,255,255,0.01)), to(transparent))";
+    spanStyle.filter = "progid:DXImageTransform.Microsoft.Gradient(GradientType=0, StartColorstr='#80FFFFFF', EndColorstr='#00FFFFFF')";
+    spanStyle.webkitBackgroundClip = "padding-box";
+
+    return nav;
+  }
+
   static function replaceChildElements(element : web.HTMLElement, content: web.HTMLElement) : void {
     var children = element.childNodes;
     for (var i = 0, l = children.length; i < l; ++i) {
@@ -460,7 +508,7 @@ class TabBarItem extends BarItem {
   }
 }
 
-class NavigationBar extends View {
+class NavigationView extends View {
   var _title : web.Node = null;
   var _anchorText : web.Node = null;
   var _href : string = "";
@@ -498,30 +546,15 @@ class NavigationBar extends View {
     header.className = "global-header";
     var h1 = Util.createElement("h1") as web.HTMLHeadingElement;
     h1.className = "page-heading";
-    // var button = new Button();
-    // button.setLabel(this._anchorText);
-    // button.setHandler(null);
-    var nav = Util.createElement("nav");
-    nav.className = "nav-page";
-    var p = Util.createElement("p") as web.HTMLParagraphElement;
-    p.className = "nav-page-left";
-    var a = Util.createElement("a") as web.HTMLAnchorElement;
-    a.href = this._href;
+    var nav = Util.createFancyButton(this._anchorText, this._href);
 
     h1.appendChild(this._title);
-    a.appendChild(this._anchorText);
-    p.appendChild(a);
-    nav.appendChild(p);
     header.appendChild(h1);
     header.appendChild(nav);
     
     var headerStyle = header.style;
     var h1Style = h1.style;
-    var navStyle = nav.style;
-    var pStyle = p.style;
-    var aStyle = a.style;
     
-//    headerStyle.borderBottom = "1px solid #ffffff";
     headerStyle.borderBottom = Util.borderWithColor(Color.WHITE);
     headerStyle.height = "44px";
     headerStyle.lineHeight = "44px";
@@ -536,35 +569,6 @@ class NavigationBar extends View {
     h1Style.whiteSpace = "nowrap";
     h1Style.textOverflow = "ellipsis";
     h1Style.textShadow = "0 1px #ffffff";
-
-    navStyle.position = "absolute";
-    navStyle.top = "0";
-    navStyle.left = "0";
-    navStyle.width = "100%";
-
-    pStyle.position = "absolute";
-    pStyle.top = "0";
-    pStyle.left = "10px";
-
-    aStyle.padding = "6px 12px";
-    aStyle.border = Util.borderWithColor(Color.LIGHT_GRAY);
-    aStyle.backgroundColor = "#D9F5F3";
-    Util.applyGradient(aStyle, "linear", "left top", "left bottom", Color.DARK_GRAY, Color.GRAY);
-    aStyle.borderRadius = "4px";
-
-
-    // var element = super._toElement(); // <div>
-    // element.appendChild(this._content);
-
-    // var style = element.style;
-    // style.color     = this._color.toString();
-    // style.textAlign = this._align;
-    // style.padding = "5px";
-    // style.margin  = "2px";
-
-    // style.borderRadius = "8px";
-    // Util.applyGradient(style, "linear", "left top", "left bottom", Color.WHITE, Color.LIGHT_GRAY);
-
 
     return header;
   }
