@@ -685,7 +685,7 @@ class WideView extends View {
 
     dlStyle.webkitTransition = "-webkit-transform ease";
     dlStyle.width = (2 * innerWidth) as string + "px";
-    
+    dlStyle.webkitTransform = "translate3d(-" + web.dom.window.innerWidth as string + "px, 0, 0)";
     ddStyle1.float = "left";
     ddStyle1.width = innerWidth as string + "px";
     ddStyle2.float = "left";
