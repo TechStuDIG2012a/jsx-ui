@@ -137,7 +137,6 @@ class Application implements Responder {
     var style   = element.style;
 
     element.appendChild(this._rootViewController.getView().getElement());
-
     return element;
   }
 
@@ -287,6 +286,31 @@ class View implements Responder, Appearance {
   var _parent : View = null;
   var _subviews = new Array.<View>();
 
+  // added properties 
+  /* frame: super viewの座標系におけるViewの原点とサイズ */
+  var _frame : Rectangle;
+  /* center: super viewの座標系におけるViewの中心 */
+  var _center : Point;
+  /* bounds: ローカル座標系におけるViewの原点とサイズ */
+  var _bounds : Rectangle;
+  var _alpha : number; 
+
+  // initWithFrameFlag
+  var _initWidthFrame : boolean;
+
+  function constructor () {
+    this._initWidthFrame = false;
+  }
+
+  // added constructor [UIKit]: initWithFrame
+  function constructor (frame : Rectangle) {
+    this._frame = frame;
+    this._bounds = new Rectangle(0, 0, frame.size.width, frame.size.height);
+    this._center = new Point(frame.origin.x + frame.size.width/2,
+                             frame.origin.y + frame.size.height/2);
+    this._initWidthFrame = true;
+  }
+
   function getBackgroundColor() : Color {
     return this._backgroundColor;
   }
@@ -320,8 +344,19 @@ class View implements Responder, Appearance {
     var block = Util.createDiv();
     var style = block.style;
 
+    style.position = "absolute";
     style.backgroundColor = this._backgroundColor.toString();
-    style.width = "auto";
+
+    if (this._initWidthFrame) {
+      style.width = this._bounds.size.width as string + "px";
+      style.height = this._bounds.size.height as string + "px";
+      style.left = this._frame.origin.x as string + "px";
+      style.top = this._frame.origin.y as string + "px";
+      // TODO _centerのCSS操作
+
+    } else {
+      style.width = "auto";
+    }
 
     if (Platform.DEBUG) {
       //style.border = Util.borderWithColor(Color.BLUE);
@@ -332,7 +367,6 @@ class View implements Responder, Appearance {
     });
     return block;
   }
-
 
   // Controlls the viwwa and subviews
 
@@ -552,9 +586,7 @@ class Label extends View {
 class Image {
   var size : Size;
   var imageRef = web.dom.document.createElement("img") as web.HTMLImageElement;
-  // var imageOrientation:
-  // var scale : number;
-  var opacity : number;
+  // var opacity : number;
 
   function constructor(imageNamed : string) {
     this.setImageRef(imageNamed);
@@ -563,20 +595,20 @@ class Image {
     this.imageRef.onload = (e) -> {
       self.setSize(new Size(self.getImageRef().naturalWidth, self.getImageRef().naturalHeight));
     };
-    this.setOpacity(1.0);
+    // this.setOpacity(1.0);
   }
 
-  function constructor(imageNamed : string, width : int, height : int) {
-    this.setImageRef(imageNamed);
-    this.setSize(new Size(width, height));
-    this.setOpacity(1.0);
-  }
+  // function constructor(imageNamed : string, width : int, height : int) {
+  //   this.setImageRef(imageNamed);
+  //   this.setSize(new Size(width, height));
+  //   this.setOpacity(1.0);
+  // }
 
-  function constructor(imageNamed : string, size : Size) {
-    this.setImageRef(imageNamed);
-    this.setSize(size);
-    this.setOpacity(1.0);
-  }
+  // function constructor(imageNamed : string, size : Size) {
+  //   this.setImageRef(imageNamed);
+  //   this.setSize(size);
+  //   this.setOpacity(1.0);
+  // }
 
   function setImageRef(imageNamed: string) : void {
     this.imageRef.src = imageNamed; 
@@ -586,13 +618,13 @@ class Image {
     return this.imageRef; 
   }
 
-  function setOpacity(opacity: number) : void {
-    this.opacity = opacity; 
-  }
-
-  function getOpacity() : number {
-    return this.opacity;
-  }
+//  function setOpacity(opacity: number) : void {
+//    this.opacity = opacity; 
+//  }
+//
+//  function getOpacity() : number {
+//    return this.opacity;
+//  }
 
   function setSize(size : Size) : void {
     this.size = size;
@@ -618,7 +650,7 @@ class ImageView extends View {
     var style = element.style;
     // style.height   = this._image.size.height as string + "px";
     // style.width = this._image.size.width as string + "px";
-    style.opacity = this._image.opacity as string;
+    // style.opacity = this._image.opacity as string;
     return element;
   }
 }
