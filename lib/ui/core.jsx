@@ -6,6 +6,7 @@
  *
  */
 
+import "timer.jsx";
 import "js/web.jsx" into web;
 
 import "./event.jsx";
@@ -333,9 +334,9 @@ class View implements Responder, Appearance {
     view._parent = this;
   }
 
-  function onClick(cb : function(:MouseEvent):void) : void {
+  function onClick(cb : function(:UIMouseEvent):void) : void {
     var listener = function (e : web.Event) : void {
-      cb(new MouseEvent(e));
+      cb(new UIMouseEvent(e));
     };
     this.getElement().addEventListener("click", listener);
   }
@@ -499,26 +500,163 @@ class NavigationBar extends View {
 }
 
 class ScrollView extends View {
- //  var delegate : ScrollViewDelegate;
    var bounces : boolean = true;
-   var contentSize : int;
- //  var indicatorStyle : ScrollViewIndicatorStyle;
+   var _size : Size; // TODO: frameプロパティを実装する
+   var _contentSize : Size;
    var pagingEnabled : boolean;
- //  var contentOffset : CGPoint;
    var minimumZoomScale : number;
    var maximumZoomScale : number;
+   var _x : int;
+   var _y : int;
+   var _vx : number;
+   var _vy : number;
 
-  var _title : string;
+   var _title : string;
 
-   function constructor() { 
+   function constructor() {
+      this._size = new Size(320, 480);
+      this._x = 0;
+      this._y = 0;
+   }
+
+   function setContentSize(size : Size) : void {
+      this._contentSize = size;
    }
 
    override function _toElement() : web.HTMLElement {
-     var element = Util.createSpan();
-     element.style.textAlign = "center";
-     var text = Util.createTextNode(this._title);
-     element.appendChild(text);
-     return element;
+      var block = Util.createDiv();
+      var style = block.style;
+
+      style.backgroundColor = this._backgroundColor.toString();
+      style.width = "auto";
+
+      if (this._subviews.length != 0) {
+         style.position = 'relative';
+         style.top = '0px';
+         style.left = '0px';
+
+         var prevX = 0;
+         var prevY = 0;
+         var prevMsTime = (new Date()).getTime();
+         block.addEventListener('mousedown', (e) -> {
+            e.preventDefault();
+
+            var me = e as web.MouseEvent;
+            prevX = me.pageX;
+            prevY = me.pageY;
+
+            var handleMove = function(e : web.Event) : void {
+               e.preventDefault();
+
+               var curMsTime = (new Date()).getTime();
+               var elapsedMs = curMsTime - prevMsTime;
+               prevMsTime = curMsTime;
+
+               var me = e as web.MouseEvent;
+               var diffX = me.pageX - prevX;
+               var diffY = me.pageY - prevY;
+
+               this._vx = diffX / elapsedMs;
+               this._vy = diffY / elapsedMs;
+
+               // TODO: 下側と右側にも対応
+               this._x += (this._x > 0) ? (diffX / 2) : (diffX);
+               this._y += (this._y > 0) ? (diffY / 2) : (diffY);
+
+               style.top = (this._y as string) + 'px';
+               style.left = (this._x as string) + 'px';
+
+               prevX = me.pageX;
+               prevY = me.pageY;
+            };
+
+            block.addEventListener('mousemove', handleMove);
+
+            // バウンドするようなモーションで、表示位置を修正する
+            var backToCorrectPosition = function () : void {
+               var fw = this._size.width;  // frame width
+               var fh = this._size.height; // frame height
+               var cw = this._contentSize.width;  // content width
+               var ch = this._contentSize.height; // content height 
+
+               if (this._x > 0) {
+                  this._x /= 1.1;
+               }
+               if (this._x + cw < fw) {
+                  this._x = (fw - cw) + (this._x + cw - fw) / 1.2;
+               }
+               if (this._y > 0) {
+                  this._y /= 1.1;
+               }
+               if (this._y + ch < fh) {
+                  this._y = (fh - ch) + (this._y + ch - fh) / 1.2;
+               }
+               style.left = (this._x as string) + 'px';
+               style.top = (this._y as string) + 'px';
+
+               if (this._x > 0 || this._y > 0 || this._x + cw < fw || this._y + ch < fh) {
+                  Timer.setTimeout(backToCorrectPosition, 33);
+               }
+            };
+
+            // 速度を減衰させつつスクロールする
+            var decelerating = function () : void {
+               var fw = this._size.width;  // frame width
+               var fh = this._size.height; // frame height
+               var cw = this._contentSize.width;  // content width
+               var ch = this._contentSize.height; // content height 
+
+               this._x += this._vx * 33;
+               this._y += this._vy * 33;
+
+               style.left = (this._x as string) + 'px';
+               style.top = (this._y as string) + 'px';
+
+               log this._vy;
+
+               if (this._x > 0 || this._x + cw < fw) {
+                  this._vx /= 2;
+               } else {
+                  if (Math.abs(this._vx) < 0.01) {
+                     this._vx = 0;
+                  } else if (this._vx < 0) {
+                     this._vx += 0.05;
+                  } else if (this._vx > 0) {
+                     this._vx -= 0.05;
+                  }
+               }
+               if (this._y > 0 || this._y + ch < fh) {
+                  this._vy /= 2;
+               } else {
+                  if (Math.abs(this._vy) < 0.05) {
+                     this._vy = 0;
+                  } else if (this._vy < 0) {
+                     this._vy += 0.05;
+                  } else if (this._vy > 0) {
+                     this._vy -= 0.05;
+                  }
+               }
+
+               if (Math.abs(this._vx) > 0.001 || Math.abs(this._vy) > 0.001) {
+                  Timer.setTimeout(decelerating, 33);
+               } else {
+                  Timer.setTimeout(backToCorrectPosition, 33);
+               }
+            };
+
+
+            block.addEventListener('mouseup', (e) -> {
+               block.removeEventListener('mousemove', handleMove);
+               Timer.setTimeout(decelerating, 33);
+            });
+
+         });
+      }
+
+      this._subviews.forEach( (view) -> {
+         block.appendChild(view.getElement());
+      });
+      return block;
    }
 }
 
