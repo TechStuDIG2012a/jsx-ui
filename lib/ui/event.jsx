@@ -1,7 +1,7 @@
 
 import "js/web.jsx" into web;
 
-abstract class Event.<T> {
+abstract class UIEvent.<T> {
   var _event : T;
 
   function constructor(e : web.Event) {
@@ -17,7 +17,7 @@ abstract class Event.<T> {
   }
 }
 
-class MouseEvent extends Event.<web.MouseEvent> {
+class UIMouseEvent extends UIEvent.<web.MouseEvent> {
   function constructor(e : web.Event) {
     super(e);
   }
