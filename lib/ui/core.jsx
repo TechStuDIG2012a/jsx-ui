@@ -57,13 +57,18 @@ class Util {
     return Util.createElement("span");
   }
 
-  static function createFancyButton(anchorText : web.Node, href : string) : web.HTMLElement {
+  static function createFancyButton(anchorText : web.Node, href : string, onclick : function(:web.Event):void) : web.HTMLElement {
     var nav = Util.createElement("nav");
     nav.className = "nav-page";
     var p = Util.createElement("p") as web.HTMLParagraphElement;
     p.className = "nav-page-left";
     var a = Util.createElement("a") as web.HTMLAnchorElement;
     a.href = href;
+    // var listener = function(e : web.Event) : void {
+    //   cb(new MouseEvent(e));
+    // };
+    // a.addEventListener("click", listener);
+    a.onclick = onclick;
     var span = Util.createSpan();
 
     // a.appendChild(this._anchorText);
@@ -564,14 +569,16 @@ class NavigationView extends View {
   var _title : web.Node = null;
   var _anchorText : web.Node = null;
   var _href : string = "";
+  var _onclick : function(:web.Event):void;
 
   function constructor() {
   }
 
-  function constructor(title : string, anchorText : string, href : string) {
+  function constructor(title : string, anchorText : string, href : string, onclick : function(:web.Event):void) {
     this._setTitle(title);
     this._setButtonText(anchorText);
     this._href = href;
+    this._onclick = onclick;
   }
 
   function _setTitle(title : string) : void {
@@ -598,8 +605,7 @@ class NavigationView extends View {
     header.className = "global-header";
     var h1 = Util.createElement("h1") as web.HTMLHeadingElement;
     h1.className = "page-heading";
-    var nav = Util.createFancyButton(this._anchorText, this._href);
-
+    var nav = Util.createFancyButton(this._anchorText, this._href, this._onclick);
     h1.appendChild(this._title);
     header.appendChild(h1);
     header.appendChild(nav);
