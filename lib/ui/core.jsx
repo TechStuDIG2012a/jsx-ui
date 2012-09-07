@@ -130,17 +130,10 @@ class Util {
 /* immutable */ class Point {
   var x : int;
   var y : int;
-  var z : int = 1;
 
   function constructor(x : int, y : int) {
     this.x = x;
     this.y = y;
-  }
-
-  function constructor(x : int, y : int, z : int) {
-    this.x = x;
-    this.y = y;
-    this.z = z;
   }
 }
 
@@ -163,11 +156,6 @@ class Util {
 
   function constructor(x : int, y : int, width : int, height : int) {
     this.origin = new Point(x, y);
-    this.size   = new Size(width, height);
-  }
-
-  function constructor(x : int, y : int, z: int, width : int, height : int) {
-    this.origin = new Point(x, y, z);
     this.size   = new Size(width, height);
   }
 }
@@ -294,6 +282,9 @@ class SuperViewController extends ViewController {
     this._mainView = main;
     this._menuView = menu;
     this._cnt = 0;
+
+    this._mainView.getElement().style.zIndex = "2";
+    this._menuView.getElement().style.zIndex = "1";
 
     this._navigationView = new NavigationView("Main", "[ ]", "#", function(e:web.Event) : void {
       if (this._cnt == 0) {
@@ -456,7 +447,7 @@ class View implements Responder, Appearance {
 
   function initWithFrame (frame : Rectangle) : void {
     this._frame = frame;
-    this._bounds = new Rectangle(0, 0, frame.origin.z, frame.size.width, frame.size.height);
+    this._bounds = new Rectangle(0, 0, frame.size.width, frame.size.height);
     this._center = new Point(frame.origin.x + frame.size.width/2,
                              frame.origin.y + frame.size.height/2);
 
@@ -503,7 +494,6 @@ class View implements Responder, Appearance {
       style.height = this._bounds.size.height as string + "px";
       style.left = this._frame.origin.x as string + "px";
       style.top = this._frame.origin.y as string + "px";
-      style.zIndex = this._frame.origin.z as string;
       // TODO _centerのCSS操作
 
     } else {
@@ -698,6 +688,8 @@ class NavigationView extends View {
     headerStyle.height = "44px";
     headerStyle.lineHeight = "44px";
     headerStyle.backgroundColor = "#a8a8a8";
+//    headerStyle.position = "fixed";
+    // headerStyle.zIndex = "10";
 
     h1Style.margin = "0 auto";
     h1Style.width = "140px";
