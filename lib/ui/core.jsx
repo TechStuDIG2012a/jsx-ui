@@ -399,11 +399,12 @@ class View implements Responder, Appearance {
   var _center : Point;
   /* bounds: ローカル座標系におけるViewの原点とサイズ */
   var _bounds : Rectangle;
-  var _alpha : number; 
+  var _opacity : number = 1.0; 
 
   function constructor () {
   }
 
+  // TODO 名前変更: constructorにするか or setFrame() 等
   function initWithFrame (frame : Rectangle) : void {
     this._frame = frame;
     this._bounds = new Rectangle(0, 0, frame.size.width, frame.size.height);
@@ -416,6 +417,14 @@ class View implements Responder, Appearance {
   }
   function setBackgroundColor(color : Color) : void {
     this._backgroundColor = color;
+  }
+
+  function getOpacity() : number {
+    return this._opacity;
+  }
+
+  function setOpacity(opacity : number) : void {
+    this._opacity = opacity;
   }
 
   function getParent() : View {
@@ -448,10 +457,11 @@ class View implements Responder, Appearance {
 
     if (this._frame) {
       style.position = "absolute";
-      style.width = this._bounds.size.width as string + "px";
-      style.height = this._bounds.size.height as string + "px";
+      style.width = this._frame.size.width as string + "px";
+      style.height = this._frame.size.height as string + "px";
       style.left = this._frame.origin.x as string + "px";
       style.top = this._frame.origin.y as string + "px";
+      style.opacity = this._opacity as string;
       // TODO _centerのCSS操作
 
     } else {
@@ -971,7 +981,9 @@ class ProgressView extends View {
 
   override function _toElement() : web.HTMLProgressElement {
     // assert this._content != null;
-    // var element = super._toElement(); // <div>
+    var element1 = super._toElement(); // <div>
+    log element1;
+
     var element = Util.createElement("progress") as web.HTMLProgressElement;
 
     var style = element.style;

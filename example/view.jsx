@@ -21,7 +21,9 @@ class MyApp extends ui.Application {
     var rect = new ui.Rectangle(0, 0, 240, 380);
     var parent_view = new ui.View();
     parent_view.initWithFrame(rect);
-    parent_view.setBackgroundColor(ui.Color.GREEN);
+    parent_view.setBackgroundColor(new ui.Color(0x00, 0xff, 0x00, 0.1));
+    parent_view.setOpacity(0.5); 
+    //parent_view.setBackgroundColor(ui.Color.BLACK);
     log parent_view;
 
     for (var i=0; i<5; i++) {
