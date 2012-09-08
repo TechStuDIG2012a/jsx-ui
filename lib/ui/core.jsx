@@ -255,6 +255,7 @@ class ViewController implements Responder {
 
   function setParentViewController(viewController : ViewController) : void {
     this._parentViewController = viewController;
+    // this._parentViewController.getView().getElement().appendChild(viewController.getView().getElement());
   }
 
   function getTabBarController() : TabBarController {
@@ -263,7 +264,7 @@ class ViewController implements Responder {
 
 }
 
-class SuperViewController extends ViewController {
+class OverlappedViewsController extends ViewController {
   var _mainView : View;
   var _menuView : View;
   var _cnt = 0;
@@ -275,6 +276,14 @@ class SuperViewController extends ViewController {
 
   function constructor(main : View, menu : View) {
     this.setViewControllers(main, menu);
+  }
+
+  function getMainView() : View {
+    return this._mainView;
+  }
+
+  function getMenuView() : View {
+    return this._menuView;
   }
 
   function setViewControllers(main : View, menu : View) : void {
@@ -315,7 +324,10 @@ class TabBarController extends ViewController {
   var _tabBar : TabBar;
 
   function constructor() {
+    var rect = new Rectangle(0, 0, Platform.getWidth(), Platform.getHeight());
     this._view = new View();
+    this._view.initWithFrame(rect);
+    this._view.setBackgroundColor(Color.RED);
   }
 
   function setViewControllers(viewControllers : Array.<ViewController>) : void {
@@ -323,9 +335,21 @@ class TabBarController extends ViewController {
 
     this._viewControllers.forEach((controller) -> {
       controller.setParentViewController(this);
+      this._view.addSubview(controller.getView());
+      controller.getView().hide();
     });
 
     this._tabBar = new TabBar(this._viewControllers);
+
+    // in order to take the tabbar forefront
+    var selectedViewController = this._viewControllers[this._selectedIndex];
+    if (selectedViewController instanceof OverlappedViewsController) {
+      // MainView is forefront now. So we have to use z-index of MainView.
+      this._tabBar.getElement().style.zIndex = ((selectedViewController as OverlappedViewsController).getMainView().getElement().style.zIndex as int + 1 ) as string;
+    } else {
+      // Other Controllers don't care about it above because they have 1 View.
+      this._tabBar.getElement().style.zIndex = (selectedViewController.getView().getElement().style.zIndex as int + 1) as string; 
+    }
 
     this._view.addSubview(this._tabBar);
 
@@ -344,15 +368,36 @@ class TabBarController extends ViewController {
     return this._viewControllers[this._selectedIndex];
   }
 
+  // function bringViewToFront(index : int) : void {
+  //   var style = this._viewControllers[index].getView().getElement().style;
+  //   style.zIndex = ((style.zIndex as int) + 1) as string;
+  // }
+  // function sendViewToBack(index : int) : void {
+  //   var style = this._viewControllers[index].getView().getElement().style;
+  //   style.zIndex = ((style.zIndex as int) - 1) as string;
+  // }
+
+  // function swapZIndex(indexA : int, indexB : int) : void {
+  //   var styleA = this._viewControllers[indexA].getView().getElement().style;
+  //   var styleB = this._viewControllers[indexB].getView().getElement().style;
+  //   var tmp = styleA.zIndex;
+  //   styleA.zIndex = styleB.zIndex;
+  //   styleB.zIndex = tmp;
+  // }
+
   function setSelectedIndex(index : int) : void {
     assert index >= 0;
     assert index < this._viewControllers.length;
+
+    this._viewControllers[this._selectedIndex].getView().hide();
 
     this._selectedIndex = index;
 
     // XXX: to sync DOM and View structure?
     //this.getView()._popSubview();
     //this.getView().addSubview(this._viewControllers[index].getElement());
+    this._viewControllers[this._selectedIndex].getView().show();
+    // log this._viewControllers[this._selectedIndex].getView().getElement();
   }
 }
 
@@ -513,20 +558,22 @@ class View implements Responder, Appearance {
   // Controlls the viwwa and subviews
 
   function show() : void {
-    this.getElement().style.display = "default";
+    // this.getElement().style.display = "default";
+    this.getElement().style.display = "block";
   }
   function hide() : void {
     this.getElement().style.display = "none";
   }
 
-  function bringSubviewToFront(subview : View) : void {
-    var style = subview.getElement().style;
-    style.zIndex = ((style.zIndex as int) + 1) as string;
-  }
-  function sendSubviewToBack(subview : View) : void {
-    var style = subview.getElement().style;
-    style.zIndex = ((style.zIndex as int) - 1) as string;
-  }
+  // function bringSubviewToFront(subview : View) : void {
+  //   var style = subview.getElement().style;
+  //   style.zIndex = ((style.zIndex as int) + 1) as string;
+  // }
+  // function sendSubviewToBack(subview : View) : void {
+  //   var style = subview.getElement().style;
+  //   style.zIndex = ((style.zIndex as int) - 1) as string;
+  // }
+
 }
 
 class Lable extends View {
@@ -582,7 +629,12 @@ class TabBar extends View {
       }
 
       itemElement.addEventListener("click", (e) -> {
-
+	for (var j = 0; j < this._controllers.length; j++) {
+	  if (this._controllers[j].getView().getElement().style.display != "none") {
+	    this._controllers[j].getView().hide();
+	    this._controllers[i].getView().show();
+	  }
+	}
       });
 
       element.appendChild(itemElement);
