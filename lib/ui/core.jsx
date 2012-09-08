@@ -450,8 +450,75 @@ class SideMenuViewController extends ViewController {
     ddStyle2.float = "left";
     ddStyle2.width = innerWidth as string + "px";
   }
+}
 
+class NavigationController extends ViewController {
+  var _rootViewController : ViewController;
+  var _stack : Array.<ViewController>;
   
+  function constructor() {
+    this._view = new View();
+    this._stack = new Array.<ViewController>;
+  }
+
+  function constructor(rootVC : ViewController) {
+    this._view = new View();
+    this._stack = new Array.<ViewController>;
+    this.initWithRootViewController(rootVC);
+  }
+
+  function initWithRootViewController(rootVC : ViewController) : void {
+    this._rootViewController = rootVC;
+    rootVC.setParentViewController(this);
+    this._view.addSubview(rootVC.getView());
+    this._stack.push(rootVC);
+  }
+
+  function getStack() : Array.<ViewController> {
+    return this._stack;
+  }
+
+  function pushViewController(vc : ViewController) : void {
+    // change foreseen view !
+    vc.setParentViewController(this);
+    this._view.popSubview();
+    this._view.addSubview(vc.getView());
+    this._view.getElement().appendChild(vc.getView().getElement());
+    this._stack.push(vc);
+  }
+
+  function popViewController() : void {
+    // change foreseen view !
+    if (this._stack.length <= 1) {
+      return;
+    }
+    var poppedVC = this._stack.pop();
+    this._view.getElement().removeChild(poppedVC.getView().getElement());
+  }
+
+  function popToRootViewController() : void {
+    while (this._stack.length > 1) {
+      this.popViewController();
+    }
+  }
+
+  function popToViewController(vc : ViewController) : void {
+    var index = -1;
+    for (var i = 0; i < this._stack.length; i++) {
+      if (this._stack[i] == vc) {
+	index = i;
+	break;
+      }
+    }
+    
+    if (index == -1) {
+      return;
+    }
+
+    while (this._stack.length > index) {
+      this.popViewController();
+    }
+  }
 }
 
 mixin Appearance {
@@ -510,6 +577,10 @@ class View implements Responder, Appearance {
   }
 
   function _popSubview(index : int) : void {
+    this._subviews.pop()._parent = null;
+  }
+
+  function popSubview() : void {
     this._subviews.pop()._parent = null;
   }
 
