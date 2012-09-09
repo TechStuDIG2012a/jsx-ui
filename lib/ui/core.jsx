@@ -8,8 +8,8 @@
 
 import "timer.jsx";
 import "js/web.jsx" into web;
-
 import "./event.jsx";
+import "console.jsx";
 
 class Platform {
   static function getWidth() : int {
@@ -163,6 +163,10 @@ class Util {
     this.origin = new Point(x, y);
     this.size   = new Size(width, height);
   }
+  function constructor(x : int, y : int, size : Size) {
+    this.origin = new Point(x, y);
+    this.size   = size;
+  }
 }
 
 mixin Responder {
@@ -170,12 +174,31 @@ mixin Responder {
 }
 
 class Application implements Responder {
+  static var _instance : Application;
+
+  var _afterDOMconstructed = new Array.<function(element : web.HTMLElement):void>;
+
   var _view : View;
   var _rootViewController : ViewController = null;
 
+  static function getInstance() : Application {
+      return Application._instance;
+  }
+
+  static function setInstance(a : Application) : void {
+    Application._instance = a;
+  }
+
   function constructor() {
+    assert Application._instance == null;
+    Application.setInstance(this);
+
     this._view = new View();
     Application.resetStyles();
+  }
+
+  function onAfterDOMConstructed(cb : function(:web.HTMLElement):void) : void {
+    this._afterDOMconstructed.push(cb);
   }
 
   function setRootViewController(rootViewController : ViewController) : void {
@@ -184,6 +207,11 @@ class Application implements Responder {
 
   function attach(rootElement : web.HTMLElement) : void {
     Util.replaceChildElements(rootElement, this.getElement());
+
+    this._afterDOMconstructed.forEach( (cb) -> {
+      log cb;
+      cb(this.getElement());
+    });
   }
 
   function getElement() : web.HTMLElement {
@@ -237,6 +265,7 @@ class ViewController implements Responder {
   var _tabBarItem : TabBarItem = null;
 
   function constructor() {
+
   }
 
   function getView() : View {
@@ -374,7 +403,7 @@ mixin Appearance {
   function _toElement() : web.HTMLElement {
     var block = Util.createDiv();
     // TODO: common setting
-    return block ;
+    return block;
   }
 
   function getElement() : web.HTMLElement {
@@ -401,11 +430,17 @@ class View implements Responder, Appearance {
   var _bounds : Rectangle;
   var _opacity : number = 1.0; 
 
+  // subViewが追加された時のframeサイズの調整
+  var _autoExpand : boolean = true;
+
   function constructor () {
   }
 
-  // TODO 名前変更: constructorにするか or setFrame() 等
-  function initWithFrame (frame : Rectangle) : void {
+  function constructor (frame : Rectangle) {
+    this.setPosition(frame);
+  }
+
+  function setPosition (frame : Rectangle) : void {
     this._frame = frame;
     this._bounds = new Rectangle(0, 0, frame.size.width, frame.size.height);
     this._center = new Point(frame.origin.x + frame.size.width/2,
@@ -415,6 +450,7 @@ class View implements Responder, Appearance {
   function getBackgroundColor() : Color {
     return this._backgroundColor;
   }
+
   function setBackgroundColor(color : Color) : void {
     this._backgroundColor = color;
   }
@@ -440,6 +476,10 @@ class View implements Responder, Appearance {
 
     this._subviews.push(view);
     view._parent = this;
+
+    if (this._autoExpand && view._frame) {
+       view.expandParentView();
+    }
   }
 
   function onClick(cb : function(:UIMouseEvent):void) : void {
@@ -466,6 +506,24 @@ class View implements Responder, Appearance {
 
     } else {
       style.width = "auto";
+
+      var self = this;
+      log "set handler";
+      Application.getInstance().onAfterDOMConstructed((element) -> {
+        log "loaded handler";
+        // log self._element.offsetWidth;
+        // log self._element.offsetHeight;
+        self.setPosition(new Rectangle(self._element.offsetLeft, 
+                           self._element.offsetTop,
+                           self._element.offsetWidth,
+                           self._element.offsetHeight));
+
+        // TODO expandView?
+        // 追加処理
+        if (self._parent && self._parent._autoExpand) {
+           self.expandParentView();
+        }
+      });
     }
 
     if (Platform.DEBUG) {
@@ -476,6 +534,31 @@ class View implements Responder, Appearance {
       block.appendChild(view.getElement());
     });
     return block;
+  }
+
+  function expandParentView() : void {
+    assert this._parent != null;
+    assert this._parent._autoExpand == true;
+    assert this._frame != null;
+
+    var parent = this._parent;
+
+    var rect : Rectangle;
+    if (parent._frame) {
+      rect  = new Rectangle(parent._frame.origin.x,
+                             parent._frame.origin.y,
+                             parent._frame.size.width + this._frame.size.width,
+                             parent._frame.size.height + this._frame.size.height
+                            );
+    } else {
+      rect = new Rectangle(0,
+                           0,
+                           this._frame.size.width,
+                           this._frame.size.height
+                          );
+
+    }
+    parent.setPosition(rect);
   }
 
   // Controlls the viwwa and subviews
@@ -669,168 +752,177 @@ class NavigationView extends View {
 
     return header;
   }
-  
 }
 
 class ScrollView extends View {
-   var bounces : boolean = true;
-   var _size : Size; // TODO: frameプロパティを実装する
-   var _contentSize : Size;
-   var pagingEnabled : boolean;
-   var minimumZoomScale : number;
-   var maximumZoomScale : number;
-   var _x : int;
-   var _y : int;
-   var _vx : number;
-   var _vy : number;
+  var bounces : boolean = true;
+  // var _size : Size; // TODO: frameプロパティを実装する
+  var _contentSize : Size;
+  var pagingEnabled : boolean;
+  var minimumZoomScale : number;
+  var maximumZoomScale : number;
+  var _x : int;
+  var _y : int;
+  var _vx : number;
+  var _vy : number;
 
-   var _title : string;
+  function constructor() {
+    super(new Rectangle(0, 0, 320, 480));
+    this._x = 0;
+    this._y = 0;
+  }
 
-   function constructor() {
-      this._size = new Size(320, 480);
-      this._x = 0;
-      this._y = 0;
-   }
+  function constructor(frame : Rectangle) {
+    super(frame);
+    this._x = frame.origin.x;
+    this._y = frame.origin.y;
+  }
 
-   function setContentSize(size : Size) : void {
-      this._contentSize = size;
-   }
+  function setContentSize(size : Size) : void {
+    this._contentSize = size;
+  }
 
-   override function _toElement() : web.HTMLElement {
-      var block = Util.createDiv();
-      var style = block.style;
+  override function _toElement() : web.HTMLElement {
+    var block = Util.createDiv();
+    var style = block.style;
 
-      style.backgroundColor = this._backgroundColor.toString();
-      style.width = "auto";
+    style.backgroundColor = this._backgroundColor.toString();
+    style.width = "auto";
 
-      if (this._subviews.length != 0) {
-         style.position = 'relative';
-         style.top = '0px';
-         style.left = '0px';
+    if (this._subviews.length != 0) {
+      style.position = 'relative';
+      style.top = '0px';
+      style.left = '0px';
 
-         var prevX = 0;
-         var prevY = 0;
-         var prevMsTime = (new Date()).getTime();
-         block.addEventListener('mousedown', (e) -> {
-            e.preventDefault();
+      var prevX = 0;
+      var prevY = 0;
+      var prevMsTime = (new Date()).getTime();
+      block.addEventListener('mousedown', (e) -> {
+        e.preventDefault();
 
-            var me = e as web.MouseEvent;
-            prevX = me.pageX;
-            prevY = me.pageY;
+        var me = e as web.MouseEvent;
+        prevX = me.pageX;
+        prevY = me.pageY;
 
-            var handleMove = function(e : web.Event) : void {
-               e.preventDefault();
+        var handleMove = function(e : web.Event) : void {
+          e.preventDefault();
 
-               var curMsTime = (new Date()).getTime();
-               var elapsedMs = curMsTime - prevMsTime;
-               prevMsTime = curMsTime;
+          var curMsTime = (new Date()).getTime();
+          var elapsedMs = curMsTime - prevMsTime;
+          prevMsTime = curMsTime;
 
-               var me = e as web.MouseEvent;
-               var diffX = me.pageX - prevX;
-               var diffY = me.pageY - prevY;
+          var me = e as web.MouseEvent;
+          var diffX = me.pageX - prevX;
+          var diffY = me.pageY - prevY;
 
-               this._vx = diffX / elapsedMs;
-               this._vy = diffY / elapsedMs;
+          this._vx = diffX / elapsedMs;
+          this._vy = diffY / elapsedMs;
 
-               // TODO: 下側と右側にも対応
-               this._x += (this._x > 0) ? (diffX / 2) : (diffX);
-               this._y += (this._y > 0) ? (diffY / 2) : (diffY);
+          // TODO: 下側と右側にも対応
+          this._x += (this._x > 0) ? (diffX / 2) : (diffX);
+          this._y += (this._y > 0) ? (diffY / 2) : (diffY);
 
-               style.top = (this._y as string) + 'px';
-               style.left = (this._x as string) + 'px';
+          style.top = (this._y as string) + 'px';
+          style.left = (this._x as string) + 'px';
 
-               prevX = me.pageX;
-               prevY = me.pageY;
-            };
+          prevX = me.pageX;
+          prevY = me.pageY;
+        };
 
-            block.addEventListener('mousemove', handleMove);
+        block.addEventListener('mousemove', handleMove);
 
-            // バウンドするようなモーションで、表示位置を修正する
-            var backToCorrectPosition = function () : void {
-               var fw = this._size.width;  // frame width
-               var fh = this._size.height; // frame height
-               var cw = this._contentSize.width;  // content width
-               var ch = this._contentSize.height; // content height 
+        // バウンドするようなモーションで、表示位置を修正する
+        var backToCorrectPosition = function () : void {
 
-               if (this._x > 0) {
-                  this._x /= 1.1;
-               }
-               if (this._x + cw < fw) {
-                  this._x = (fw - cw) + (this._x + cw - fw) / 1.2;
-               }
-               if (this._y > 0) {
-                  this._y /= 1.1;
-               }
-               if (this._y + ch < fh) {
-                  this._y = (fh - ch) + (this._y + ch - fh) / 1.2;
-               }
-               style.left = (this._x as string) + 'px';
-               style.top = (this._y as string) + 'px';
+          // var fw = this._size.width;  // frame width
+          // var fh = this._size.height; // frame height
+          var fw = this._frame.size.width;  
+          var fh = this._frame.size.height; 
+          var cw = this._contentSize.width;  // content width
+          var ch = this._contentSize.height; // content height 
 
-               if (this._x > 0 || this._y > 0 || this._x + cw < fw || this._y + ch < fh) {
-                  Timer.setTimeout(backToCorrectPosition, 33);
-               }
-            };
+          if (this._x > 0) {
+            this._x /= 1.1;
+          }
+          if (this._x + cw < fw) {
+            this._x = (fw - cw) + (this._x + cw - fw) / 1.2;
+          }
+          if (this._y > 0) {
+            this._y /= 1.1;
+          }
+          if (this._y + ch < fh) {
+            this._y = (fh - ch) + (this._y + ch - fh) / 1.2;
+          }
+          style.left = (this._x as string) + 'px';
+          style.top = (this._y as string) + 'px';
 
-            // 速度を減衰させつつスクロールする
-            var decelerating = function () : void {
-               var fw = this._size.width;  // frame width
-               var fh = this._size.height; // frame height
-               var cw = this._contentSize.width;  // content width
-               var ch = this._contentSize.height; // content height 
+          if (this._x > 0 || this._y > 0 || this._x + cw < fw || this._y + ch < fh) {
+            Timer.setTimeout(backToCorrectPosition, 33);
+          }
+        };
 
-               this._x += this._vx * 33;
-               this._y += this._vy * 33;
+        // 速度を減衰させつつスクロールする
+        var decelerating = function () : void {
 
-               style.left = (this._x as string) + 'px';
-               style.top = (this._y as string) + 'px';
+          // var fw = this._size.width;  // frame width
+          // var fh = this._size.height; // frame height
+          var fw = this._frame.size.width;  
+          var fh = this._frame.size.height; 
+          var cw = this._contentSize.width;  // content width
+          var ch = this._contentSize.height; // content height 
 
-               log this._vy;
+          this._x += this._vx * 33;
+          this._y += this._vy * 33;
 
-               if (this._x > 0 || this._x + cw < fw) {
-                  this._vx /= 2;
-               } else {
-                  if (Math.abs(this._vx) < 0.01) {
-                     this._vx = 0;
-                  } else if (this._vx < 0) {
-                     this._vx += 0.05;
-                  } else if (this._vx > 0) {
-                     this._vx -= 0.05;
-                  }
-               }
-               if (this._y > 0 || this._y + ch < fh) {
-                  this._vy /= 2;
-               } else {
-                  if (Math.abs(this._vy) < 0.05) {
-                     this._vy = 0;
-                  } else if (this._vy < 0) {
-                     this._vy += 0.05;
-                  } else if (this._vy > 0) {
-                     this._vy -= 0.05;
-                  }
-               }
+          style.left = (this._x as string) + 'px';
+          style.top = (this._y as string) + 'px';
 
-               if (Math.abs(this._vx) > 0.001 || Math.abs(this._vy) > 0.001) {
-                  Timer.setTimeout(decelerating, 33);
-               } else {
-                  Timer.setTimeout(backToCorrectPosition, 33);
-               }
-            };
+          log this._vy;
+
+          if (this._x > 0 || this._x + cw < fw) {
+            this._vx /= 2;
+          } else {
+            if (Math.abs(this._vx) < 0.01) {
+              this._vx = 0;
+            } else if (this._vx < 0) {
+              this._vx += 0.05;
+            } else if (this._vx > 0) {
+              this._vx -= 0.05;
+            }
+          }
+          if (this._y > 0 || this._y + ch < fh) {
+            this._vy /= 2;
+          } else {
+            if (Math.abs(this._vy) < 0.05) {
+              this._vy = 0;
+            } else if (this._vy < 0) {
+              this._vy += 0.05;
+            } else if (this._vy > 0) {
+              this._vy -= 0.05;
+            }
+          }
+
+          if (Math.abs(this._vx) > 0.001 || Math.abs(this._vy) > 0.001) {
+            Timer.setTimeout(decelerating, 33);
+          } else {
+            Timer.setTimeout(backToCorrectPosition, 33);
+          }
+        };
 
 
-            block.addEventListener('mouseup', (e) -> {
-               block.removeEventListener('mousemove', handleMove);
-               Timer.setTimeout(decelerating, 33);
-            });
+        block.addEventListener('mouseup', (e) -> {
+          block.removeEventListener('mousemove', handleMove);
+          Timer.setTimeout(decelerating, 33);
+        });
 
-         });
-      }
-
-      this._subviews.forEach( (view) -> {
-         block.appendChild(view.getElement());
       });
-      return block;
-   }
+    }
+
+    this._subviews.forEach( (view) -> {
+      block.appendChild(view.getElement());
+    });
+    return block;
+  }
 }
 
 class Control extends View {
@@ -842,10 +934,13 @@ class Label extends View {
   var _color : Color = Color.DARK_TEXT;
   var _align : string;
 
-  function constructor() {
+  function constructor(text : string) {
+    super();
+    this.setText(text);
   }
 
-  function constructor(text : string) {
+  function constructor(text : string, frame : Rectangle) {
+    super(frame);
     this.setText(text);
   }
 
@@ -889,7 +984,6 @@ class Label extends View {
     style.borderRadius = "8px";
     Util.applyGradient(style, "linear", "left top", "left bottom", Color.WHITE, Color.LIGHT_GRAY);
 
-
     return element;
   }
 }
@@ -903,7 +997,8 @@ class Image {
 
     var self = this;
     this.imageRef.onload = (e) -> {
-      self.setSize(new Size(self.getImageRef().naturalWidth, self.getImageRef().naturalHeight));
+      var s = new Size(self.getImageRef().naturalWidth, self.getImageRef().naturalHeight);
+      self.setSize(s);
     };
   }
   
@@ -927,7 +1022,29 @@ class Image {
 class ImageView extends View {
   var _image : Image;
 
+
   function constructor(image : Image) {
+
+    // ここでsuper(new Rectangle(0, 0, image.getSize()) 呼び出して
+    // _frameを初期化したいが, imageがonloadされていないため
+    // 無名関数で_frameを調整する
+
+    super();
+    this._image = image;
+    var self = this;
+    this._image.imageRef.onload = (e) -> {
+      var size = new Size(image.getImageRef().naturalWidth, 
+                          image.getImageRef().naturalHeight);
+
+      // super class のconstructor処理
+      self._frame = new Rectangle(0, 0, size);
+      self._bounds = new Rectangle(0, 0, size);
+      self._center = new Point(size.width/2, size.height/2);
+    };
+  }
+
+  function constructor(image : Image, frame : Rectangle) {
+    super(frame);
     this._image = image;
   }
 
@@ -943,6 +1060,9 @@ class ImageView extends View {
       style.left = this._frame.origin.x as string + "px";
       style.top = this._frame.origin.y as string + "px";
       // TODO _centerのCSS操作
+    } else {
+      style.width = "auto";
+      style.height = "auto";
     }
     return element;
   }

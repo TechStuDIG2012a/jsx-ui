@@ -24,12 +24,12 @@ class MyApp extends ui.Application {
 
 		var img = new ui.Image('./test.png');
 		var img_view = new ui.ImageView(img);
+    log img_view;
     view.addSubview(img_view);
     log view;
 
 		var img2 = new ui.Image('./test.png');
-		var img_view_small = new ui.ImageView(img2);
-    img_view_small.initWithFrame(new ui.Rectangle(0, 0, 50, 50));
+		var img_view_small = new ui.ImageView(img2, new ui.Rectangle(0, 0, 70, 80));
     log img_view_small;
     view.addSubview(img_view_small);
 	}
