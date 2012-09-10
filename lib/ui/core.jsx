@@ -470,18 +470,18 @@ class NavigationController extends ViewController {
   function constructor() {
     this._stack = new Array.<ViewController>;
 
-    var navRect = new Rectangle(0, 0, Platform.getWidth(), Platform.getHeight());
+    var rect = new Rectangle(0, 0, Platform.getWidth(), Platform.getHeight());
     this._view = new View();
-    this._view.initWithFrame(navRect);
+    this._view.initWithFrame(rect);
     this._view.setBackgroundColor(Color.LIGHT_GRAY);
     this._mainView = new View();
     this._view.addSubview(this._mainView);
   }
 
   function initWithRootViewController(rootVC : ViewController) : void {
-    this._navigationView = new NavigationView();
+    //this._navigationView = new NavigationView();
     this.pushViewController(rootVC, "root View!");
-    this._view.addSubview(this._navigationView);
+    //this._view.addSubview(this._navigationView);
   }
 
  function getStack() : Array.<ViewController> {
@@ -493,9 +493,18 @@ class NavigationController extends ViewController {
     vc.setParentViewController(this);
 //    this._view.addSubview(vc.getView());
     this._mainView.addSubview(vc.getView());
-    this._navigationView.setTitle(title);
+//    this._navigationView.setTitle(title);
     this._stack.push(vc);
+    this._mainView.getElement().style.zIndex = "3";
     this._mainView.getElement().appendChild(vc.getView().getElement());
+
+
+    this._navigationView = new NavigationView();
+    this._navigationView.setTitle(title);
+    var navRect = new Rectangle(0, 0, Platform.getWidth(), 45);
+    this._navigationView.initWithFrame(navRect);
+    this._view.addSubview(this._navigationView);
+    this._view.getElement().appendChild(this._navigationView.getElement());
   }
 
   function popViewController() : void {
@@ -766,8 +775,6 @@ class NavigationView extends View {
   function constructor() {
   }
 
-
-
   function setTitle(title : string) : void {
     this._title = Util.createTextNode(title);
   }
@@ -835,7 +842,7 @@ class NavigationView extends View {
     h1Style.textShadow = "0 1px #ffffff";
     
     //return header;
-    //element.style.zIndex = "5";
+    element.style.zIndex = "5";
     element.appendChild(header);
     // log element;
     return element;
