@@ -490,21 +490,30 @@ class NavigationController extends ViewController {
 
   function pushViewController(vc : ViewController, title : string) : void {
     // change foreseen view !
+
+    // remove old view!
+    if (this._stack.length > 0) {
+      var len = this._stack.length;
+      var lastVC = this._stack[len-1];
+      this._mainView.getElement().removeChild(lastVC.getView().getElement());
+    }
+
+    // make new view!
     vc.setParentViewController(this);
 //    this._view.addSubview(vc.getView());
     this._mainView.addSubview(vc.getView());
 //    this._navigationView.setTitle(title);
     this._stack.push(vc);
-    this._mainView.getElement().style.zIndex = "3";
+//    this._mainView.getElement().style.zIndex = "3";
+    
     this._mainView.getElement().appendChild(vc.getView().getElement());
 
-
-    this._navigationView = new NavigationView();
-    this._navigationView.setTitle(title);
-    var navRect = new Rectangle(0, 0, Platform.getWidth(), 45);
-    this._navigationView.initWithFrame(navRect);
-    this._view.addSubview(this._navigationView);
-    this._view.getElement().appendChild(this._navigationView.getElement());
+    // this._navigationView = new NavigationView();
+    // this._navigationView.setTitle(title);
+    // var navRect = new Rectangle(0, 0, Platform.getWidth(), 45);
+    // this._navigationView.initWithFrame(navRect);
+    // this._view.addSubview(this._navigationView);
+    // this._view.getElement().appendChild(this._navigationView.getElement());
   }
 
   function popViewController() : void {
@@ -512,8 +521,14 @@ class NavigationController extends ViewController {
     if (this._stack.length <= 1) {
       return;
     }
-    var poppedVC = this._stack.pop();
-    this._mainView.getElement().removeChild(poppedVC.getView().getElement());
+    // remove old view!
+    var lastVC = this._stack.pop();
+    this._mainView.getElement().removeChild(lastVC.getView().getElement());
+
+    // make new view!;
+    var len = this._stack.length;
+    lastVC = this._stack[len-1];
+    this._mainView.getElement().appendChild(lastVC.getView().getElement());
   }
 
   function popToRootViewController() : void {
