@@ -349,7 +349,6 @@ class TabBarController extends ViewController {
     });
 
     this._tabBar = new TabBar(this._viewControllers);
-
     // in order to take the tabbar forefront
     var selectedViewController = this._viewControllers[this._selectedIndex];
     if (selectedViewController instanceof OverlappedViewsController) {
@@ -462,27 +461,19 @@ class SideMenuViewController extends ViewController {
 }
 
 class NavigationController extends ViewController {
-  // var _rootViewController : ViewController;
-  // var _stack : Array.<ViewController>;
   var _navigationView : NavigationView;
   
   function constructor() {
+    var navRect = new Rectangle(0, 0, Platform.getWidth(), Platform.getHeight());
+    this._view = new View();
+    this._view.initWithFrame(navRect);
+    this._view.setBackgroundColor(Color.LIGHT_GRAY);
   }
 
   function initWithRootViewController(rootVC : ViewController) : void {
-    this._view = new View();
-    var navRect = new Rectangle(0, 0, Platform.getWidth(), 44);
-    this._view.initWithFrame(navRect);
-
     this._navigationView = new NavigationView();
-
+    this.pushViewController(rootVC, "root View!");
     this._view.addSubview(this._navigationView);
-
-    // this.pushViewController(rootVC, "root View!");
-    this._navigationView.setTitle("root view!");
-    rootVC.setParentViewController(this);
-    this._view.addSubview(rootVC.getView());
-    this._navigationView.setRootViewController(rootVC);   
   }
 
   function getStack() : Array.<ViewController> {
@@ -494,8 +485,6 @@ class NavigationController extends ViewController {
     vc.setParentViewController(this);
     this._view.addSubview(vc.getView());
     this._navigationView.pushViewController(vc, title);
-    //this.getView().getElement().appendChild(vc.getView().getElement());
-    //vc.getView().getElement().style.zIndex = "3";
   }
 
   function popViewController() : void {
@@ -767,23 +756,14 @@ class NavigationView extends View {
     return this._stack;
   }
 
-  function setRootViewController(rootVC : ViewController) : void {
-    this._rootViewController = rootVC;
-
-    this.getElement().appendChild(rootVC.getView().getElement());
-    rootVC.getView().getElement().style.zIndex = "3";
-    this._stack.push(this._rootViewController);
-  }
-
   function pushViewController(vc : ViewController, title : string) : void {
     // change foreseen view !
     this.setTitle(title);
-    this.setLeftButton("back", "#", function(e:web.Event) : void {
-      this.popViewController();
-    });
+    // this.setLeftButton("back", "#", function(e:web.Event) : void {
+    //   this.popViewController();
+    // });
 
     this.getElement().appendChild(vc.getView().getElement());
-    vc.getView().getElement().style.zIndex = "3";
     this._stack.push(vc);
   }
 
@@ -825,7 +805,7 @@ class NavigationView extends View {
   }
 
   override function _toElement() : web.HTMLElement {
-    assert this._title != null;
+    //assert this._title != null;
     // assert this._anchorText != null;
     var element = super._toElement();
 
@@ -869,10 +849,9 @@ class NavigationView extends View {
     h1Style.textShadow = "0 1px #ffffff";
     
     //return header;
-    element.style.zIndex = "5";
+    //element.style.zIndex = "5";
     element.appendChild(header);
-    element.appendChild(this._rootViewController.getView().getElement());
-    log element;
+    // log element;
     return element;
   }
   
