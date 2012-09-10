@@ -464,25 +464,34 @@ class NavigationController extends ViewController {
   var _rootViewController : ViewController;
   var _stack : Array.<ViewController>;
 
-  var _navigationView : NavigationView;
+  // var _navigationView : NavigationView = null;
+  var _navigationViewStack : Array.<NavigationView>;
   var _mainView : View;
   
   function constructor() {
     this._stack = new Array.<ViewController>;
+    this._navigationViewStack = new Array.<NavigationView>;
 
     var rect = new Rectangle(0, 0, Platform.getWidth(), Platform.getHeight());
     this._view = new View();
     this._view.initWithFrame(rect);
     this._view.setBackgroundColor(Color.LIGHT_GRAY);
     this._mainView = new View();
+    var mainRect = new Rectangle(0, 45, Platform.getWidth(),Platform.getHeight() - 45);
+    this._mainView.initWithFrame(mainRect);
     this._view.addSubview(this._mainView);
   }
 
-  function initWithRootViewController(rootVC : ViewController) : void {
-    //this._navigationView = new NavigationView();
-    this.pushViewController(rootVC, "root View!");
-    //this._view.addSubview(this._navigationView);
-  }
+  // function initWithRootViewController(rootVC : ViewController) : void {
+  //   this.pushViewController(rootVC, "root View!");
+
+  //   this._navigationView = new NavigationView();
+  //   this._navigationView.setTitle(title);
+  //   var navRect = new Rectangle(0, 0, Platform.getWidth(), 45);
+  //   this._navigationView.initWithFrame(navRect);
+  //   this._view.addSubview(this._navigationView);
+  //   this._view.getElement().appendChild(this._navigationView.getElement());
+  // }
 
  function getStack() : Array.<ViewController> {
     return this._stack;
@@ -496,24 +505,24 @@ class NavigationController extends ViewController {
       var len = this._stack.length;
       var lastVC = this._stack[len-1];
       this._mainView.getElement().removeChild(lastVC.getView().getElement());
+      var lastNV = this._navigationViewStack[len-1];
+      this._view.getElement().removeChild(lastNV.getElement());
     }
 
     // make new view!
     vc.setParentViewController(this);
-//    this._view.addSubview(vc.getView());
     this._mainView.addSubview(vc.getView());
-//    this._navigationView.setTitle(title);
     this._stack.push(vc);
 //    this._mainView.getElement().style.zIndex = "3";
-    
     this._mainView.getElement().appendChild(vc.getView().getElement());
 
-    // this._navigationView = new NavigationView();
-    // this._navigationView.setTitle(title);
-    // var navRect = new Rectangle(0, 0, Platform.getWidth(), 45);
-    // this._navigationView.initWithFrame(navRect);
-    // this._view.addSubview(this._navigationView);
-    // this._view.getElement().appendChild(this._navigationView.getElement());
+    var newNV = new NavigationView();
+    newNV.setTitle(title);
+    var navRect = new Rectangle(0, 0, Platform.getWidth(), 45);
+    newNV.initWithFrame(navRect);
+    this._view.addSubview(newNV);
+    this._navigationViewStack.push(newNV);
+    this._view.getElement().appendChild(newNV.getElement());
   }
 
   function popViewController() : void {
@@ -524,11 +533,15 @@ class NavigationController extends ViewController {
     // remove old view!
     var lastVC = this._stack.pop();
     this._mainView.getElement().removeChild(lastVC.getView().getElement());
+    var lastNV = this._navigationViewStack.pop();
+    this._view.getElement().removeChild(lastNV.getElement());
 
     // make new view!;
     var len = this._stack.length;
     lastVC = this._stack[len-1];
     this._mainView.getElement().appendChild(lastVC.getView().getElement());
+    lastNV = this._navigationViewStack[len-1];
+    this._view.getElement().appendChild(lastNV.getElement());
   }
 
   function popToRootViewController() : void {
