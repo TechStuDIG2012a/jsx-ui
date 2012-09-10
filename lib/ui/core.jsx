@@ -302,9 +302,7 @@ class OverlappedViewsController extends ViewController {
     this._mainView.getElement().style.zIndex = "2";
     this._menuView.getElement().style.zIndex = "1";
 
-    // this._navigationView = new NavigationView();
-    // this._navigationView.setTitle("Main!");
-    // this._navigationView.setLeftButton("[ ]", "#", function(e:web.Event) : void {
+    // this.getNavigationView().setLeftButton("[ ]", "#", function(e:web.Event) : void {
     //   if (this._cnt == 0) {
     // 	this._mainView.getElement().style.webkitTransform = "translate3d(" + (this._dispWidth * 0.8) as string  + "px, 0, 0)";
     // 	this._mainView.getElement().style.webkitTransitionDuration = "300ms";
@@ -316,8 +314,7 @@ class OverlappedViewsController extends ViewController {
     //   }
     // });
 
-    // this._mainView.getElement().insertBefore(this._navigationView.getElement(), this._mainView.getElement().firstElementChild);
-    // this._mainView.getElement().style.webkitTransform = "-webkit-transition:-webkit-transform ease";
+    this._mainView.getElement().style.webkitTransform = "-webkit-transition:-webkit-transform ease";
     
 //    this._mainView.getElement().onclick 
 
@@ -520,6 +517,9 @@ class NavigationController extends ViewController {
     newNV.setTitle(title);
     var navRect = new Rectangle(0, 0, Platform.getWidth(), 45);
     newNV.initWithFrame(navRect);
+    newNV.setRightButton("Back", "#", function(e : web.Event) : void {
+      this.popViewController();
+    });
     this._view.addSubview(newNV);
     this._navigationViewStack.push(newNV);
     this._view.getElement().appendChild(newNV.getElement());
