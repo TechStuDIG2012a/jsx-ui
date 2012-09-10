@@ -16,23 +16,22 @@ class _Main {
 class MyApp extends ui.Application {
 
   function constructor() {
-    var scrollView = new ui.ScrollView();
-    var tableView = this.createTableView();
-    scrollView.addSubview(tableView);
 
-    //scrollView.setContentSize();
-
-    // var iv = this.createImageView();
-    // log iv;
-    // scrollView.addSubview(iv);
-    // // onloadされていないため、ImageViewのframe指定
-    // // を直接しない場合は_bounds.sizeを読み込めない.
-    // // TODO: 回避する処理を実装する
-    // scrollView.setContentSize(iv._bounds.size);
-
+    var tableView = new ui.TableView(new ui.Rectangle(0, 0, 70, 80));
+    tableView.setDataSource("http://api.twitter.com/1/statuses/public_timeline.json?trim_user=twitter");
+    var viewList = this.createLabelListView();
+    tableView.addSubview(viewList);
     var rootController = new ui.ViewController();
-    rootController.setView(scrollView);
+    rootController.setView(tableView);
 
     this.setRootViewController(rootController);
+  }
+
+  function createLabelListView() : ui.View {
+    var view = new ui.View();
+    for (var i=0; i<200; i++) {
+      view.addSubview(new ui.Label('label : ' + (i as string)).toCenter());
+    }
+    return view;
   }
 }

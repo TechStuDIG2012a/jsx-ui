@@ -19,10 +19,7 @@ class MyApp extends ui.Application {
     var scrollView = new ui.ScrollView();
     var listView = this.createLabelListView();
     scrollView.addSubview(listView);
-
-    // log listView.getBounds();
-
-    //scrollView.setContentSize();
+    scrollView.setContentSize(new ui.Size(200, 200));
 
     // var iv = this.createImageView();
     // log iv;

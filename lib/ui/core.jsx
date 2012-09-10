@@ -925,6 +925,49 @@ class ScrollView extends View {
   }
 }
 
+class TableView extends ScrollView {
+
+  var _title : string;
+
+  var _dataSource : Array.<View>;
+  var _rowHeight : int;
+  var _separatorStyle : string;
+  var _separatorColor : Color;
+  var _allowsSelection : boolean;
+  var _tableHeaderView : View;
+  var _tableFooterView : View;
+  var _editing : boolean;
+
+  function constructor () {
+  }
+
+  function constructor (frame : Rectangle) {
+    super(frame);
+    // this.setPosition();
+    this.setContentSize(frame.size);
+  }
+
+  function getSeparatorColor() : Color {
+    return this._separatorColor;
+  }
+
+  function setSeparatorColor(color : Color) : void {
+    this._separatorColor = color;
+  }
+
+  function setDataSource(ds : string) : void {
+    // TODO: convert jason to View
+    var url = ds;
+  }
+
+  override function _toElement() : web.HTMLElement {
+
+    var element = super._toElement();  
+    return element;
+  }
+}
+
+
 class Control extends View {
 
 }
