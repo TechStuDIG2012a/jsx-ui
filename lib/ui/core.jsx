@@ -461,13 +461,21 @@ class SideMenuViewController extends ViewController {
 }
 
 class NavigationController extends ViewController {
+  var _rootViewController : ViewController;
+  var _stack : Array.<ViewController>;
+
   var _navigationView : NavigationView;
+  var _mainView : View;
   
   function constructor() {
+    this._stack = new Array.<ViewController>;
+
     var navRect = new Rectangle(0, 0, Platform.getWidth(), Platform.getHeight());
     this._view = new View();
     this._view.initWithFrame(navRect);
     this._view.setBackgroundColor(Color.LIGHT_GRAY);
+    this._mainView = new View();
+    this._view.addSubview(this._mainView);
   }
 
   function initWithRootViewController(rootVC : ViewController) : void {
@@ -476,23 +484,33 @@ class NavigationController extends ViewController {
     this._view.addSubview(this._navigationView);
   }
 
-  function getStack() : Array.<ViewController> {
-    return this._navigationView.getStack();
+ function getStack() : Array.<ViewController> {
+    return this._stack;
   }
 
   function pushViewController(vc : ViewController, title : string) : void {
     // change foreseen view !
     vc.setParentViewController(this);
-    this._view.addSubview(vc.getView());
-    this._navigationView.pushViewController(vc, title);
+//    this._view.addSubview(vc.getView());
+    this._mainView.addSubview(vc.getView());
+    this._navigationView.setTitle(title);
+    this._stack.push(vc);
+    this._mainView.getElement().appendChild(vc.getView().getElement());
   }
 
   function popViewController() : void {
-    this._navigationView.popViewController();
+    // change foreseen view !
+    if (this._stack.length <= 1) {
+      return;
+    }
+    var poppedVC = this._stack.pop();
+    this._mainView.getElement().removeChild(poppedVC.getView().getElement());
   }
 
   function popToRootViewController() : void {
-    this._navigationView.popToRootViewController();
+    while (this._stack.length > 1) {
+      this.popViewController();
+    }
   }
 }
 
@@ -745,42 +763,10 @@ class NavigationView extends View {
   var _leftOnclick : function(:web.Event):void;
   var _rightOnclick : function(:web.Event):void;
 
-  var _rootViewController : ViewController;
-  var _stack : Array.<ViewController>;
-
   function constructor() {
-    this._stack = new Array.<ViewController>;
   }
 
-  function getStack() : Array.<ViewController> {
-    return this._stack;
-  }
 
-  function pushViewController(vc : ViewController, title : string) : void {
-    // change foreseen view !
-    this.setTitle(title);
-    // this.setLeftButton("back", "#", function(e:web.Event) : void {
-    //   this.popViewController();
-    // });
-
-    this.getElement().appendChild(vc.getView().getElement());
-    this._stack.push(vc);
-  }
-
-  function popViewController() : void {
-    // change foreseen view !
-    if (this._stack.length <= 1) {
-      return;
-    }
-    var poppedVC = this._stack.pop();
-    this.getElement().removeChild(poppedVC.getView().getElement());
-  }
-
-  function popToRootViewController() : void {
-    while (this._stack.length > 1) {
-      this.popViewController();
-    }
-  }
 
   function setTitle(title : string) : void {
     this._title = Util.createTextNode(title);
