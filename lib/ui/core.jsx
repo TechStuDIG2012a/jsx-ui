@@ -58,11 +58,11 @@ class Util {
     return Util.createElement("span");
   }
 
-  static function createNavButton(anchorText : web.Node, href : string, onclick : function(:web.Event):void) : web.HTMLElement {
+  static function createNavButton(left : boolean, anchorText : web.Node, href : string, onclick : function(:web.Event):void) : web.HTMLElement {
     var nav = Util.createElement("nav");
-    nav.className = "nav-page";
+    // nav.className = "nav-page";
     var p = Util.createElement("p") as web.HTMLParagraphElement;
-    p.className = "nav-page-left";
+    // p.className = "nav-page-left";
     var a = Util.createElement("a") as web.HTMLAnchorElement;
     a.href = href;
     a.onclick = onclick;
@@ -80,13 +80,20 @@ class Util {
 
     navStyle.position = "absolute";
     navStyle.top = "0";
-    navStyle.left = "0";
+    if (left) {
+      navStyle.left = "0";
+    } else {
+      navStyle.left = (Platform.getWidth() - 80) as string;
+    }
     navStyle.width = "100%";
 
     pStyle.position = "absolute";
     pStyle.top = "5px";
-    pStyle.left = "10px";
-
+    if (left) {
+      pStyle.left = "10px";      
+    } else {
+      pStyle.left = (Platform.getWidth() - 80 + 10) as string + "px";
+    }
     spanStyle.display = "block";
     spanStyle.float = "left";
     spanStyle.letterSpacing = "-1px";
@@ -268,7 +275,7 @@ class OverlappedViewsController extends ViewController {
   var _mainView : View;
   var _menuView : View;
   var _cnt = 0;
-  var _navigationView : NavigationView;
+//  var _navigationView : NavigationView;
   var _dispWidth = Platform.getWidth();
   
   function constructor() {
@@ -295,20 +302,22 @@ class OverlappedViewsController extends ViewController {
     this._mainView.getElement().style.zIndex = "2";
     this._menuView.getElement().style.zIndex = "1";
 
-    this._navigationView = new NavigationView("Main", "[ ]", "#", function(e:web.Event) : void {
-      if (this._cnt == 0) {
-	this._mainView.getElement().style.webkitTransform = "translate3d(" + (this._dispWidth * 0.8) as string  + "px, 0, 0)";
-	this._mainView.getElement().style.webkitTransitionDuration = "300ms";
-	this._cnt++;
-      } else {
-	this._mainView.getElement().style.webkitTransform = "translate3d(0, 0, 0)";
-	this._mainView.getElement().style.webkitTransitionDuration = "300ms";
-	this._cnt--;
-      }
-    });
+    // this._navigationView = new NavigationView();
+    // this._navigationView.setTitle("Main!");
+    // this._navigationView.setLeftButton("[ ]", "#", function(e:web.Event) : void {
+    //   if (this._cnt == 0) {
+    // 	this._mainView.getElement().style.webkitTransform = "translate3d(" + (this._dispWidth * 0.8) as string  + "px, 0, 0)";
+    // 	this._mainView.getElement().style.webkitTransitionDuration = "300ms";
+    // 	this._cnt++;
+    //   } else {
+    // 	this._mainView.getElement().style.webkitTransform = "translate3d(0, 0, 0)";
+    // 	this._mainView.getElement().style.webkitTransitionDuration = "300ms";
+    // 	this._cnt--;
+    //   }
+    // });
 
-    this._mainView.getElement().insertBefore(this._navigationView.getElement(), this._mainView.getElement().firstElementChild);
-    this._mainView.getElement().style.webkitTransform = "-webkit-transition:-webkit-transform ease";
+    // this._mainView.getElement().insertBefore(this._navigationView.getElement(), this._mainView.getElement().firstElementChild);
+    // this._mainView.getElement().style.webkitTransform = "-webkit-transition:-webkit-transform ease";
     
 //    this._mainView.getElement().onclick 
 
@@ -453,71 +462,48 @@ class SideMenuViewController extends ViewController {
 }
 
 class NavigationController extends ViewController {
-  var _rootViewController : ViewController;
-  var _stack : Array.<ViewController>;
+  // var _rootViewController : ViewController;
+  // var _stack : Array.<ViewController>;
+  var _navigationView : NavigationView;
   
   function constructor() {
-    this._view = new View();
-    this._stack = new Array.<ViewController>;
-  }
-
-  function constructor(rootVC : ViewController) {
-    this._view = new View();
-    this._stack = new Array.<ViewController>;
-    this.initWithRootViewController(rootVC);
   }
 
   function initWithRootViewController(rootVC : ViewController) : void {
-    this._rootViewController = rootVC;
+    this._view = new View();
+    var navRect = new Rectangle(0, 0, Platform.getWidth(), 44);
+    this._view.initWithFrame(navRect);
+
+    this._navigationView = new NavigationView();
+
+    this._view.addSubview(this._navigationView);
+
+    // this.pushViewController(rootVC, "root View!");
+    this._navigationView.setTitle("root view!");
     rootVC.setParentViewController(this);
     this._view.addSubview(rootVC.getView());
-    this._stack.push(rootVC);
+    this._navigationView.setRootViewController(rootVC);   
   }
 
   function getStack() : Array.<ViewController> {
-    return this._stack;
+    return this._navigationView.getStack();
   }
 
-  function pushViewController(vc : ViewController) : void {
+  function pushViewController(vc : ViewController, title : string) : void {
     // change foreseen view !
     vc.setParentViewController(this);
-    this._view.popSubview();
     this._view.addSubview(vc.getView());
-    this._view.getElement().appendChild(vc.getView().getElement());
-    this._stack.push(vc);
+    this._navigationView.pushViewController(vc, title);
+    //this.getView().getElement().appendChild(vc.getView().getElement());
+    //vc.getView().getElement().style.zIndex = "3";
   }
 
   function popViewController() : void {
-    // change foreseen view !
-    if (this._stack.length <= 1) {
-      return;
-    }
-    var poppedVC = this._stack.pop();
-    this._view.getElement().removeChild(poppedVC.getView().getElement());
+    this._navigationView.popViewController();
   }
 
   function popToRootViewController() : void {
-    while (this._stack.length > 1) {
-      this.popViewController();
-    }
-  }
-
-  function popToViewController(vc : ViewController) : void {
-    var index = -1;
-    for (var i = 0; i < this._stack.length; i++) {
-      if (this._stack[i] == vc) {
-	index = i;
-	break;
-      }
-    }
-    
-    if (index == -1) {
-      return;
-    }
-
-    while (this._stack.length > index) {
-      this.popViewController();
-    }
+    this._navigationView.popToRootViewController();
   }
 }
 
@@ -679,7 +665,7 @@ class TabBar extends View {
     style.height   = this._height as string + "px";
     style.position = "fixed";
     style.bottom   = "0px";
-    style.width    = "100%";
+    style.width    = "10%";
 
     var itemWidth = (Platform.getWidth() / this._controllers.length) as int;
 
@@ -761,58 +747,116 @@ class TabBarItem extends BarItem {
 
 class NavigationView extends View {
   var _title : web.Node = null;
-  var _anchorText : web.Node = null;
-  var _href : string = "";
-  var _onclick : function(:web.Event):void;
+  var _leftButtonValid : boolean = false;
+  var _rightButtonValid : boolean = false;
+  var _leftAnchorText : web.Node = null;
+  var _rightAnchorText : web.Node = null;
+  var _leftHref : string = "";
+  var _rightHref : string = "";
+  var _leftOnclick : function(:web.Event):void;
+  var _rightOnclick : function(:web.Event):void;
+
+  var _rootViewController : ViewController;
+  var _stack : Array.<ViewController>;
 
   function constructor() {
+    this._stack = new Array.<ViewController>;
   }
 
-  function constructor(title : string, anchorText : string, href : string, onclick : function(:web.Event):void) {
-    this._setTitle(title);
-    this._setButtonText(anchorText);
-    this._href = href;
-    this._onclick = onclick;
+  function getStack() : Array.<ViewController> {
+    return this._stack;
   }
 
-  function _setTitle(title : string) : void {
+  function setRootViewController(rootVC : ViewController) : void {
+    this._rootViewController = rootVC;
+
+    this.getElement().appendChild(rootVC.getView().getElement());
+    rootVC.getView().getElement().style.zIndex = "3";
+    this._stack.push(this._rootViewController);
+  }
+
+  function pushViewController(vc : ViewController, title : string) : void {
+    // change foreseen view !
+    this.setTitle(title);
+    this.setLeftButton("back", "#", function(e:web.Event) : void {
+      this.popViewController();
+    });
+
+    this.getElement().appendChild(vc.getView().getElement());
+    vc.getView().getElement().style.zIndex = "3";
+    this._stack.push(vc);
+  }
+
+  function popViewController() : void {
+    // change foreseen view !
+    if (this._stack.length <= 1) {
+      return;
+    }
+    var poppedVC = this._stack.pop();
+    this.getElement().removeChild(poppedVC.getView().getElement());
+  }
+
+  function popToRootViewController() : void {
+    while (this._stack.length > 1) {
+      this.popViewController();
+    }
+  }
+
+  function setTitle(title : string) : void {
     this._title = Util.createTextNode(title);
   }
 
-  function _setTitle(title : web.Node) : void {
+  function setTitle(title : web.Node) : void {
     this._title = title;
   }
 
-  function _setButtonText(anchorText : string) : void {
-    this._anchorText = Util.createTextNode(anchorText);
+  function setLeftButton(anchorText : string, href : string, onclick : function(:web.Event):void) : void {
+    this._leftButtonValid = true;
+    this._leftAnchorText = Util.createTextNode(anchorText);
+    this._leftHref = href;
+    this._leftOnclick = onclick;
   }
 
-  function _setButtonText(anchorText : web.Node) : void {
-    this._anchorText = anchorText;
+  function setRightButton(anchorText : string, href : string, onclick : function(:web.Event):void) : void {
+    this._rightButtonValid = true;
+    this._rightAnchorText = Util.createTextNode(anchorText);
+    this._rightHref = href;
+    this._rightOnclick = onclick;
   }
 
   override function _toElement() : web.HTMLElement {
     assert this._title != null;
-    assert this._anchorText != null;
+    // assert this._anchorText != null;
+    var element = super._toElement();
 
     var header = Util.createElement("header") as web.HTMLElement;
-    header.className = "global-header";
+    // header.className = "global-header";
     var h1 = Util.createElement("h1") as web.HTMLHeadingElement;
-    h1.className = "page-heading";
-    var nav = Util.createNavButton(this._anchorText, this._href, this._onclick);
+    // h1.className = "page-heading";
+
     h1.appendChild(this._title);
     header.appendChild(h1);
-    header.appendChild(nav);
     
+    var leftNav : web.Element = null;
+    if (this._leftButtonValid) {
+      leftNav = Util.createNavButton(true, this._leftAnchorText, this._leftHref, this._leftOnclick);
+      header.appendChild(leftNav);
+    }
+
+    var rightNav : web.Element = null;
+    if (this._rightButtonValid) {
+      var rightNav = Util.createNavButton(false, this._rightAnchorText, this._rightHref, this._rightOnclick);
+      header.appendChild(rightNav);
+    }
+        
     var headerStyle = header.style;
     var h1Style = h1.style;
     
     headerStyle.borderBottom = Util.borderWithColor(Color.WHITE);
-    headerStyle.height = "44px";
+    // headerStyle.height = "44px";
     headerStyle.lineHeight = "44px";
     headerStyle.backgroundColor = "#a8a8a8";
 //    headerStyle.position = "fixed";
-    // headerStyle.zIndex = "10";
 
     h1Style.margin = "0 auto";
     h1Style.width = "140px";
@@ -823,8 +867,13 @@ class NavigationView extends View {
     h1Style.whiteSpace = "nowrap";
     h1Style.textOverflow = "ellipsis";
     h1Style.textShadow = "0 1px #ffffff";
-
-    return header;
+    
+    //return header;
+    element.style.zIndex = "5";
+    element.appendChild(header);
+    element.appendChild(this._rootViewController.getView().getElement());
+    log element;
+    return element;
   }
   
 }
