@@ -113,6 +113,23 @@ class Util {
     return nav;
   }
 
+  static function addSlideAnimation(clickedView : View, slideView : View) : void {
+    var cnt = 0;
+    clickedView.getElement().onclick = function(e:web.Event) : void {
+      if (cnt == 0) {
+    	slideView.getElement().style.webkitTransform = "translate3d(" + (Platform.getWidth() * 0.8) as string  + "px, 0, 0)";
+    	slideView.getElement().style.webkitTransitionDuration = "300ms";
+    	cnt++;
+      } else {
+    	slideView.getElement().style.webkitTransform = "translate3d(0, 0, 0)";
+    	slideView.getElement().style.webkitTransitionDuration = "300ms";
+    	cnt--;
+      }
+    };
+
+    slideView.getElement().style.webkitTransform = "-webkit-transition:-webkit-transform ease";
+  }
+
   static function replaceChildElements(element : web.HTMLElement, content: web.HTMLElement) : void {
     var children = element.childNodes;
     for (var i = 0, l = children.length; i < l; ++i) {
@@ -238,7 +255,17 @@ class ViewController implements Responder {
 
   var _tabBarItem : TabBarItem = null;
 
+  var _navIndex = 0;
+
   function constructor() {
+  }
+
+  function setNavIndex(i : number) : void {
+    this._navIndex = i;
+  }
+
+  function getNavIndex() : number {
+    return this._navIndex;
   }
 
   function getView() : View {
@@ -263,6 +290,7 @@ class ViewController implements Responder {
   function setParentViewController(viewController : ViewController) : void {
     this._parentViewController = viewController;
     // this._parentViewController.getView().getElement().appendChild(viewController.getView().getElement());
+    this.setNavIndex(viewController.getNavIndex());
   }
 
   function getTabBarController() : TabBarController {
@@ -275,14 +303,22 @@ class OverlappedViewsController extends ViewController {
   var _mainView : View;
   var _menuView : View;
   var _cnt = 0;
-//  var _navigationView : NavigationView;
   var _dispWidth = Platform.getWidth();
+  var _navigationController : NavigationController;
   
   function constructor() {
   }
 
   function constructor(main : View, menu : View) {
     this.setViewControllers(main, menu);
+  }
+
+  function setNavigationController(nav : NavigationController) : void {
+    this._navigationController = nav;
+  }
+
+  function getNavigationController() : NavigationController {
+    return this._navigationController;
   }
 
   function getMainView() : View {
@@ -314,7 +350,7 @@ class OverlappedViewsController extends ViewController {
     //   }
     // });
 
-    this._mainView.getElement().style.webkitTransform = "-webkit-transition:-webkit-transform ease";
+    // this._mainView.getElement().style.webkitTransform = "-webkit-transition:-webkit-transform ease";
     
 //    this._mainView.getElement().onclick 
 
@@ -494,6 +530,10 @@ class NavigationController extends ViewController {
     return this._stack;
   }
 
+ function getNavigationViewStack() : Array.<NavigationView> {
+    return this._navigationViewStack;
+  }
+
   function pushViewController(vc : ViewController, title : string) : void {
     // change foreseen view !
 
@@ -509,6 +549,7 @@ class NavigationController extends ViewController {
     // make new view!
     vc.setParentViewController(this);
     this._mainView.addSubview(vc.getView());
+    vc.setNavIndex(this._stack.length);
     this._stack.push(vc);
 //    this._mainView.getElement().style.zIndex = "3";
     this._mainView.getElement().appendChild(vc.getView().getElement());
@@ -517,9 +558,11 @@ class NavigationController extends ViewController {
     newNV.setTitle(title);
     var navRect = new Rectangle(0, 0, Platform.getWidth(), 45);
     newNV.initWithFrame(navRect);
-    newNV.setRightButton("Back", "#", function(e : web.Event) : void {
-      this.popViewController();
-    });
+    if (this._stack.length > 1) {
+      newNV.setLeftButton("Back", "#", function(e : web.Event) : void {
+	this.popViewController();
+      });
+    }
     this._view.addSubview(newNV);
     this._navigationViewStack.push(newNV);
     this._view.getElement().appendChild(newNV.getElement());
