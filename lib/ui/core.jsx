@@ -854,7 +854,6 @@ class ScrollView extends View {
             this._y = (fh - ch) + (this._y + ch - fh) / 1.2;
           }
 
-
           this._x = this._alwaysBounceVertical ? 0 : this._x;
           this._y = this._alwaysBounceHorizontal ? 0 : this._y;
 
@@ -933,7 +932,7 @@ class ScrollView extends View {
 class TableView extends ScrollView {
 
   // var _title : string;
-  var _cellType : View;
+  var _cellType : TableViewCell;
   var _dataSource : Array.<Object>;
   // var _rowHeight : int;
   var _separatorStyle : string;
@@ -944,7 +943,6 @@ class TableView extends ScrollView {
   // var _editing : boolean;
 
   function constructor () {
-
     this._alwaysBounceVertical = true;
     this._autoExpand = false;
   }
@@ -965,33 +963,93 @@ class TableView extends ScrollView {
   }
 
   function setDataSource(url : string) : void {
-    // TODO: jsonをオブジェクト配列に変換.
+
+    var httpRequest = new web.XMLHttpRequest();
+    httpRequest.open('GET', url, true);
+    var self = this;
+    httpRequest.onreadystatechange = (e) -> {
+      if(httpRequest.readyState == 4) {
+        if(httpRequest.status == 200) {
+          var data = JSON.parse(httpRequest.responseText) as Array.<Object>;
+          log data;
+          self._dataSource = data;
+          self.refreshThisElement();        
+
+          // Todo: refresh elements.
+        }
+      }
+    };
+    httpRequest.send();
   }
 
   function setDataSource(ds : Array.<Object>) : void {
     this._dataSource = ds;
   }
 
-  function setCellType(cell : View) : void {
+  function setCellType(cell : TableViewCell) : void {
+    this._cellType = cell;
+  }
+
+  function refreshThisElement() : void {
+    var oldElement = this.getElement();
+    var newElement = this.createTableElement();
+    Util.replaceChildElements(oldElement, newElement);
   }
 
   function createTableElement() : web.HTMLElement {
     assert this._cellType != null;
     assert this._dataSource != null;
 
-    return null;
+    var element = super._toElement();
+    this._dataSource.forEach( (tw) -> {
+      var tweet = new Tweet(tw);
+
+      var cell = new TableViewCell();
+      // cell._autoExpand = false;
+      cell.setImage(tweet.profile_image_url);
+      cell.setText(tweet.screen_name);
+      cell.setDetailTextLabel(tweet.text);
+      element.appendChild(cell.getElement());
+      log cell;
+      this.addSubview(cell);
+    });
+    return element;
   }
   
   override function _toElement() : web.HTMLElement {
     var scrollViewElement = super._toElement();  
-    var tableElement = this.createTableElement();
-    scrollViewElement.appendChild(tableElement);
+
+//    if (this._dataSource && this._cellType){
+//      var tableElement = this.createTableElement();
+//      scrollViewElement.appendChild(tableElement);
+//    }
     return scrollViewElement;
   }
 }
 
-class TableViewController extends ViewController {
+
+class Tweet {
+
+  var created_at : string;
+  var text: string;
+  var screen_name : string;
+  var user_id: int;
+  var profile_image_url : string;
+
+  function constructor (data : variant) {
+
+    this.created_at = data['created_at'] as string;
+    this.text = data['text'] as string;
+
+    var user = data['user'];
+    this.screen_name = user['screen_name'] as string;
+    this.user_id = user['id'] as int;
+    this.profile_image_url = user['profile_image_url'] as string;
+  }
 }
+
+// class TableViewController extends ViewController {
+// }
 
 class TableViewCell extends View {
 
@@ -1007,11 +1065,9 @@ class TableViewCell extends View {
   }
 
   function setImage(resource : string) : void {
-    // Todo : position setting.
-    // constructor?
+
     this._image = new Image(resource);
     this._imageView = new ImageView(this._image);
-    // this.addSubview(this._imageView);
   }
 
   function setText(resource : string) : void {
@@ -1020,7 +1076,6 @@ class TableViewCell extends View {
 
   function setDetailTextLabel(resource : string) : void {
     this._detailTextLabel = new Label(resource);
-    // this.addSubview(this._detailTextLabel);
   }
 
   override function _toElement() : web.HTMLElement {

@@ -20,6 +20,7 @@ class MyApp extends ui.Application {
     var listView = this.createLabelListView();
     scrollView.addSubview(listView);
     scrollView._autoExpand = false;
+    // scrollView._alwaysBounceVertical = true;
     log listView._frame;
     scrollView.setContentSize(new ui.Size(320, 5600));
 

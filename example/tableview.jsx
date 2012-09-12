@@ -32,7 +32,7 @@ class MyApp extends ui.Application {
     // tableView.setDataSource(url);
     // var data = JSON.parse('[{"name": "hoge1"}, {"name": "hoge2"}, {"name": "hoge3"}, {"name": "hoge4"}]') as Array.<Object>;
 
-    var data = JSON.parse('[{"name": "hoge1"}, {"name": "hoge2"}, {"name": "hoge3"}, {"name": "hoge4"}]');
+    var data = JSON.parse('[{"name": "hoge1"}, {"name": "hoge2"}, {"name": "hoge3"}, {"name": "hoge4"}]') as Array.<Object>;
     data.forEach( (e) -> {
       log e;
     });
