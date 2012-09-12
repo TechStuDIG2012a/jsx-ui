@@ -8,7 +8,6 @@ class _Main {
 
     var app = new MyApp();
     app.attach(dom.id("world"));
-
     console.timeEnd("application loading");
   }
 }
@@ -17,21 +16,35 @@ class MyApp extends ui.Application {
 
   function constructor() {
 
-    var tableView = new ui.TableView(new ui.Rectangle(0, 0, 70, 80));
-    tableView.setDataSource("http://api.twitter.com/1/statuses/public_timeline.json?trim_user=twitter");
-    var viewList = this.createLabelListView();
-    tableView.addSubview(viewList);
     var rootController = new ui.ViewController();
-    rootController.setView(tableView);
 
+    var mainView = new ui.View();
+
+    // add title label.
+    var label = new ui.Label("table view test");
+    mainView.addSubview(label);
+
+    // add tableView.
+    var rect = new ui.Rectangle(0, 26, ui.Platform.getWidth(), ui.Platform.getHeight()-26);
+    var tableView = new ui.TableView(rect);
+
+    // var url = "http://api.twitter.com/1/statuses/public_timeline.json?trim_user=twitter";
+    // tableView.setDataSource(url);
+    // var data = JSON.parse('[{"name": "hoge1"}, {"name": "hoge2"}, {"name": "hoge3"}, {"name": "hoge4"}]') as Array.<Object>;
+
+    var data = JSON.parse('[{"name": "hoge1"}, {"name": "hoge2"}, {"name": "hoge3"}, {"name": "hoge4"}]');
+    data.forEach( (e) -> {
+      log e;
+    });
+
+    tableView.setDataSource(data);
+
+    // tableView.setCellType();
+    // tableView.setContentSize(new ui.Size(320, 5600));
+
+    // mainView.addSubview(tableView);
+    rootController.setView(mainView);
     this.setRootViewController(rootController);
   }
-
-  function createLabelListView() : ui.View {
-    var view = new ui.View();
-    for (var i=0; i<200; i++) {
-      view.addSubview(new ui.Label('label : ' + (i as string)).toCenter());
-    }
-    return view;
-  }
 }
+

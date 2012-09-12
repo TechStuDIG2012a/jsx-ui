@@ -209,7 +209,6 @@ class Application implements Responder {
     Util.replaceChildElements(rootElement, this.getElement());
 
     this._afterDOMconstructed.forEach( (cb) -> {
-      log cb;
       cb(this.getElement());
     });
   }
@@ -393,8 +392,6 @@ class SideMenuViewController extends ViewController {
     ddStyle2.float = "left";
     ddStyle2.width = innerWidth as string + "px";
   }
-
-  
 }
 
 mixin Appearance {
@@ -431,7 +428,7 @@ class View implements Responder, Appearance {
   var _opacity : number = 1.0; 
 
   // subViewが追加された時のframeサイズの調整
-  var _autoExpand : boolean = true;
+   var _autoExpand : boolean = true;
 
   function constructor () {
   }
@@ -506,11 +503,10 @@ class View implements Responder, Appearance {
 
     } else {
       style.width = "auto";
-
       var self = this;
-      log "set handler";
+      // log "set handler";
       Application.getInstance().onAfterDOMConstructed((element) -> {
-        log "loaded handler";
+        // log "loaded handler";
         // log self._element.offsetWidth;
         // log self._element.offsetHeight;
         self.setPosition(new Rectangle(self._element.offsetLeft, 
@@ -519,11 +515,11 @@ class View implements Responder, Appearance {
                            self._element.offsetHeight));
 
         // TODO expandView?
-        // 追加処理
-        if (self._parent && self._parent._autoExpand) {
-           self.expandParentView();
-        }
-      });
+         // 追加処理
+         if (self._parent && self._parent._autoExpand) {
+            self.expandParentView();
+         }
+       });
     }
 
     if (Platform.DEBUG) {
@@ -756,7 +752,9 @@ class NavigationView extends View {
 
 class ScrollView extends View {
   var bounces : boolean = true;
-  // var _size : Size; // TODO: frameプロパティを実装する
+  var _alwaysBounceHorizontal : boolean = false;
+  var _alwaysBounceVertical : boolean = false;
+
   var _contentSize : Size;
   var pagingEnabled : boolean;
   var minimumZoomScale : number;
@@ -767,7 +765,7 @@ class ScrollView extends View {
   var _vy : number;
 
   function constructor() {
-    super(new Rectangle(0, 0, 320, 480));
+    super(new Rectangle(0, 0, Platform.getWidth(), Platform.getHeight()));
     this._x = 0;
     this._y = 0;
   }
@@ -819,9 +817,11 @@ class ScrollView extends View {
           this._vy = diffY / elapsedMs;
 
           // TODO: 下側と右側にも対応
-          this._x += (this._x > 0) ? (diffX / 2) : (diffX);
-          this._y += (this._y > 0) ? (diffY / 2) : (diffY);
+          this._x += (this._x > 0 || this._x < this._frame.size.width) ? (diffX / 2) : (diffX);
+          this._y += (this._y > 0 || this._y < this._frame.size.height) ? (diffY / 2) : (diffY);
 
+          this._x = this._alwaysBounceVertical ? 0 : this._x;
+          this._y = this._alwaysBounceHorizontal ? 0 : this._y;
           style.top = (this._y as string) + 'px';
           style.left = (this._x as string) + 'px';
 
@@ -853,6 +853,11 @@ class ScrollView extends View {
           if (this._y + ch < fh) {
             this._y = (fh - ch) + (this._y + ch - fh) / 1.2;
           }
+
+
+          this._x = this._alwaysBounceVertical ? 0 : this._x;
+          this._y = this._alwaysBounceHorizontal ? 0 : this._y;
+
           style.left = (this._x as string) + 'px';
           style.top = (this._y as string) + 'px';
 
@@ -874,9 +879,11 @@ class ScrollView extends View {
           this._x += this._vx * 33;
           this._y += this._vy * 33;
 
+          this._x = this._alwaysBounceVertical ? 0 : this._x;
+          this._y = this._alwaysBounceHorizontal ? 0 : this._y;
           style.left = (this._x as string) + 'px';
           style.top = (this._y as string) + 'px';
-
+          
           log this._vy;
 
           if (this._x > 0 || this._x + cw < fw) {
@@ -909,12 +916,10 @@ class ScrollView extends View {
           }
         };
 
-
         block.addEventListener('mouseup', (e) -> {
           block.removeEventListener('mousemove', handleMove);
           Timer.setTimeout(decelerating, 33);
         });
-
       });
     }
 
@@ -927,24 +932,28 @@ class ScrollView extends View {
 
 class TableView extends ScrollView {
 
-  var _title : string;
-
-  var _dataSource : Array.<View>;
-  var _rowHeight : int;
+  // var _title : string;
+  var _cellType : View;
+  var _dataSource : Array.<Object>;
+  // var _rowHeight : int;
   var _separatorStyle : string;
   var _separatorColor : Color;
-  var _allowsSelection : boolean;
-  var _tableHeaderView : View;
-  var _tableFooterView : View;
-  var _editing : boolean;
+  // var _allowsSelection : boolean;
+  // var _tableHeaderView : View;
+  // var _tableFooterView : View;
+  // var _editing : boolean;
 
   function constructor () {
+
+    this._alwaysBounceVertical = true;
+    this._autoExpand = false;
   }
 
   function constructor (frame : Rectangle) {
     super(frame);
-    // this.setPosition();
     this.setContentSize(frame.size);
+    this._alwaysBounceVertical = true;
+    this._autoExpand = false;
   }
 
   function getSeparatorColor() : Color {
@@ -955,18 +964,87 @@ class TableView extends ScrollView {
     this._separatorColor = color;
   }
 
-  function setDataSource(ds : string) : void {
-    // TODO: convert jason to View
-    var url = ds;
+  function setDataSource(url : string) : void {
+    // TODO: jsonをオブジェクト配列に変換.
+  }
+
+  function setDataSource(ds : Array.<Object>) : void {
+    this._dataSource = ds;
+  }
+
+  function setCellType(cell : View) : void {
+  }
+
+  function createTableElement() : web.HTMLElement {
+    assert this._cellType != null;
+    assert this._dataSource != null;
+
+    return null;
+  }
+  
+  override function _toElement() : web.HTMLElement {
+    var scrollViewElement = super._toElement();  
+    var tableElement = this.createTableElement();
+    scrollViewElement.appendChild(tableElement);
+    return scrollViewElement;
+  }
+}
+
+class TableViewController extends ViewController {
+}
+
+class TableViewCell extends View {
+
+  // var _contentView : View;
+  var _detailTextLabel : Label;
+  var _image : Image;
+  var _imageView : ImageView;
+  // var _selected : boolean;
+  var _text : string;
+  var _textColor : Color;
+
+  function constructor() {
+  }
+
+  function setImage(resource : string) : void {
+    // Todo : position setting.
+    // constructor?
+    this._image = new Image(resource);
+    this._imageView = new ImageView(this._image);
+    // this.addSubview(this._imageView);
+  }
+
+  function setText(resource : string) : void {
+    this._text = resource;
+  }
+
+  function setDetailTextLabel(resource : string) : void {
+    this._detailTextLabel = new Label(resource);
+    // this.addSubview(this._detailTextLabel);
   }
 
   override function _toElement() : web.HTMLElement {
 
-    var element = super._toElement();  
-    return element;
+    var block = super._toElement();
+
+    if (this._imageView) {
+      block.appendChild(this._imageView.getElement());
+    }
+
+    if (this._text) {
+      var textElement = Util.createElement("Strong");
+      textElement.style.padding = "0px 0px 0px 15px";
+      textElement.appendChild(Util.createTextNode(this._text));
+      block.appendChild(textElement);
+    }
+
+    if (this._detailTextLabel) {
+      block.appendChild(this._detailTextLabel.getElement());
+    }
+
+    return block;
   }
 }
-
 
 class Control extends View {
 
@@ -1386,7 +1464,6 @@ class TextField extends Control {
 
     return element;
   }
-
 }
 
 
