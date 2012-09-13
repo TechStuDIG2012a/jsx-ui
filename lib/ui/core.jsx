@@ -434,10 +434,10 @@ class View implements Responder, Appearance {
   }
 
   function constructor (frame : Rectangle) {
-    this.setPosition(frame);
+    this.initWithFrame(frame);
   }
 
-  function setPosition (frame : Rectangle) : void {
+  function initWithFrame (frame : Rectangle) : void {
     this._frame = frame;
     this._bounds = new Rectangle(0, 0, frame.size.width, frame.size.height);
     this._center = new Point(frame.origin.x + frame.size.width/2,
