@@ -16,7 +16,11 @@ class MyApp extends ui.Application {
 
   function constructor() {
 
+    //var mainView = new ui.View(new ui.Rectangle(0, 0, ui.Platform.getWidth(), ui.Platform.getHeight()));
+    //var mainView = new ui.View(new ui.Rectangle(0, 0, 320, 480));
     var mainView = new ui.View();
+    mainView.setBackgroundColor(ui.Color.RED);
+    
     // var label = new ui.Label("timeline test");
     // mainView.addSubview(label);
 
@@ -34,12 +38,13 @@ class MyApp extends ui.Application {
 
     var rootController = new ui.ViewController();
     rootController.setView(mainView);
-
+//    rootController.setView(tableView);
 
     this.setRootViewController(rootController);
     // this.setTimeline();
     // log tableView.getElement();
     // log mainView.getElement();
+    log rootController.getView().getElement();
   }
 
   function createLabelListView() : ui.View {

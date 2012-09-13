@@ -16,6 +16,7 @@ class _Main {
 class MyApp extends ui.Application {
   function constructor() {
     var top = new ui.NavigationController();
+    top.setNavigationViewColor(ui.Color.GREEN, ui.Color.RED);
 
     var rootVC  = new FirstViewController();
 

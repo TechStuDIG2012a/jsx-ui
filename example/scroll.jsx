@@ -17,6 +17,8 @@ class MyApp extends ui.Application {
 
   function constructor() {
     var scrollView = new ui.ScrollView();
+    var mainView = new ui.View();
+
     var listView = this.createLabelListView();
     // scrollView.addSubview(listView);
     scrollView._autoExpand = false;
@@ -35,7 +37,9 @@ class MyApp extends ui.Application {
     // scrollView.setContentSize(iv._bounds.size);
 
     var rootController = new ui.ViewController();
-    rootController.setView(scrollView);
+    //rootController.setView(scrollView);
+    mainView.addSubview(scrollView);
+    rootController.setView(mainView);
 
     this.setRootViewController(rootController);
   }
