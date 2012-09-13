@@ -366,22 +366,6 @@ class OverlappedViewsController extends ViewController {
     this._mainView.getElement().style.zIndex = "2";
     this._subView.getElement().style.zIndex = "1";
 
-    // this.getNavigationView().setLeftButton("[ ]", "#", function(e:web.Event) : void {
-    //   if (this._cnt == 0) {
-    // 	this._mainView.getElement().style.webkitTransform = "translate3d(" + (this._dispWidth * 0.8) as string  + "px, 0, 0)";
-    // 	this._mainView.getElement().style.webkitTransitionDuration = "300ms";
-    // 	this._cnt++;
-    //   } else {
-    // 	this._mainView.getElement().style.webkitTransform = "translate3d(0, 0, 0)";
-    // 	this._mainView.getElement().style.webkitTransitionDuration = "300ms";
-    // 	this._cnt--;
-    //   }
-    // });
-
-    // this._mainView.getElement().style.webkitTransform = "-webkit-transition:-webkit-transform ease";
-    
-//    this._mainView.getElement().onclick 
-
     this._view.addSubview(this._mainView);
     this._view.addSubview(this._subView);
   }
@@ -437,23 +421,6 @@ class TabBarController extends ViewController {
     return this._viewControllers[this._selectedIndex];
   }
 
-  // function bringViewToFront(index : int) : void {
-  //   var style = this._viewControllers[index].getView().getElement().style;
-  //   style.zIndex = ((style.zIndex as int) + 1) as string;
-  // }
-  // function sendViewToBack(index : int) : void {
-  //   var style = this._viewControllers[index].getView().getElement().style;
-  //   style.zIndex = ((style.zIndex as int) - 1) as string;
-  // }
-
-  // function swapZIndex(indexA : int, indexB : int) : void {
-  //   var styleA = this._viewControllers[indexA].getView().getElement().style;
-  //   var styleB = this._viewControllers[indexB].getView().getElement().style;
-  //   var tmp = styleA.zIndex;
-  //   styleA.zIndex = styleB.zIndex;
-  //   styleB.zIndex = tmp;
-  // }
-
   function setSelectedIndex(index : int) : void {
     assert index >= 0;
     assert index < this._viewControllers.length;
@@ -466,7 +433,6 @@ class TabBarController extends ViewController {
     //this.getView()._popSubview();
     //this.getView().addSubview(this._viewControllers[index].getElement());
     this._viewControllers[this._selectedIndex].getView().show();
-    // log this._viewControllers[this._selectedIndex].getView().getElement();
   }
 }
 
@@ -495,17 +461,6 @@ class NavigationController extends ViewController {
     this._mainView.initWithFrame(mainRect);
     this._view.addSubview(this._mainView);
   }
-
-  // function initWithRootViewController(rootVC : ViewController) : void {
-  //   this.pushViewController(rootVC, "root View!");
-
-  //   this._navigationView = new NavigationView();
-  //   this._navigationView.setTitle(title);
-  //   var navRect = new Rectangle(0, 0, Platform.getWidth(), 45);
-  //   this._navigationView.initWithFrame(navRect);
-  //   this._view.addSubview(this._navigationView);
-  //   this._view.getElement().appendChild(this._navigationView.getElement());
-  // }
 
   function getStack() : Array.<ViewController> {
     return this._stack;
@@ -706,7 +661,7 @@ class View implements Responder, Appearance {
         // log "loaded handler";
         // log self._element.offsetWidth;
         // log self._element.offsetHeight;
-        self.setPosition(new Rectangle(self._element.offsetLeft, 
+        self.initWithFrame(new Rectangle(self._element.offsetLeft, 
                            self._element.offsetTop,
                            self._element.offsetWidth,
                            self._element.offsetHeight));
@@ -751,7 +706,7 @@ class View implements Responder, Appearance {
                           );
 
     }
-    parent.setPosition(rect);
+    parent.initWithFrame(rect);
   }
 
   // Controlls the viwwa and subviews
@@ -763,15 +718,6 @@ class View implements Responder, Appearance {
   function hide() : void {
     this.getElement().style.display = "none";
   }
-
-  // function bringSubviewToFront(subview : View) : void {
-  //   var style = subview.getElement().style;
-  //   style.zIndex = ((style.zIndex as int) + 1) as string;
-  // }
-  // function sendSubviewToBack(subview : View) : void {
-  //   var style = subview.getElement().style;
-  //   style.zIndex = ((style.zIndex as int) - 1) as string;
-  // }
 
 }
 
@@ -1617,14 +1563,6 @@ class MenuView extends View {
       if (i != this._ddNum - 1) {
       	ddStyle.marginBottom = "-1px";
       }
-      // if (i == 0) {
-      // 	ddStyle.borderTopLeftRadius = "8px";
-      // 	ddStyle.borderTopRightRadius = "8px";
-      // }
-      // if (i == this._ddNum - 1) {
-      // 	ddStyle.borderBottomLeftRadius = "8px";
-      // 	ddStyle.borderBottomRightRadius = "8px";
-      // }
     }
 
     return nav;
