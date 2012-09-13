@@ -626,9 +626,9 @@ class View implements Responder, Appearance {
     this._subviews.push(view);
     view._parent = this;
 
-    if (this._autoExpand && view._frame) {
-       view.expandParentView();
-    }
+    // if (this._autoExpand && view._frame) {
+    //    view.expandParentView();
+    // }
   }
 
   function onClick(cb : function(:UIMouseEvent):void) : void {
@@ -668,9 +668,9 @@ class View implements Responder, Appearance {
 
         // TODO expandView?
          // 追加処理
-         if (self._parent && self._parent._autoExpand) {
-            self.expandParentView();
-         }
+         // if (self._parent && self._parent._autoExpand) {
+         //    self.expandParentView();
+         // }
        });
     }
 
