@@ -8,8 +8,8 @@
 
 import "timer.jsx";
 import "js/web.jsx" into web;
-
 import "./event.jsx";
+import "console.jsx";
 
 class Platform {
   static function getWidth() : int {
@@ -182,6 +182,10 @@ class Util {
     this.origin = new Point(x, y);
     this.size   = new Size(width, height);
   }
+  function constructor(x : int, y : int, size : Size) {
+    this.origin = new Point(x, y);
+    this.size   = size;
+  }
 }
 
 mixin Responder {
@@ -189,12 +193,31 @@ mixin Responder {
 }
 
 class Application implements Responder {
+  static var _instance : Application;
+
+  var _afterDOMconstructed = new Array.<function(element : web.HTMLElement):void>;
+
   var _view : View;
   var _rootViewController : ViewController = null;
 
+  static function getInstance() : Application {
+      return Application._instance;
+  }
+
+  static function setInstance(a : Application) : void {
+    Application._instance = a;
+  }
+
   function constructor() {
+    assert Application._instance == null;
+    Application.setInstance(this);
+
     this._view = new View();
     Application.resetStyles();
+  }
+
+  function onAfterDOMConstructed(cb : function(:web.HTMLElement):void) : void {
+    this._afterDOMconstructed.push(cb);
   }
 
   function setRootViewController(rootViewController : ViewController) : void {
@@ -203,6 +226,10 @@ class Application implements Responder {
 
   function attach(rootElement : web.HTMLElement) : void {
     Util.replaceChildElements(rootElement, this.getElement());
+
+    this._afterDOMconstructed.forEach( (cb) -> {
+      cb(this.getElement());
+    });
   }
 
   function getElement() : web.HTMLElement {
@@ -258,6 +285,7 @@ class ViewController implements Responder {
   var _navIndex = 0;
 
   function constructor() {
+
   }
 
   function setNavIndex(i : number) : void {
@@ -564,7 +592,7 @@ mixin Appearance {
   function _toElement() : web.HTMLElement {
     var block = Util.createDiv();
     // TODO: common setting
-    return block ;
+    return block;
   }
 
   function getElement() : web.HTMLElement {
@@ -589,12 +617,19 @@ class View implements Responder, Appearance {
   var _center : Point;
   /* bounds: ローカル座標系におけるViewの原点とサイズ */
   var _bounds : Rectangle;
-  var _alpha : number; 
+  var _opacity : number = 1.0; 
+
+  // subViewが追加された時のframeサイズの調整
+   var _autoExpand : boolean = true;
 
   function constructor () {
   }
 
-  function initWithFrame (frame : Rectangle) : void {
+  function constructor (frame : Rectangle) {
+    this.setPosition(frame);
+  }
+
+  function setPosition (frame : Rectangle) : void {
     this._frame = frame;
     this._bounds = new Rectangle(0, 0, frame.size.width, frame.size.height);
     this._center = new Point(frame.origin.x + frame.size.width/2,
@@ -605,8 +640,17 @@ class View implements Responder, Appearance {
   function getBackgroundColor() : Color {
     return this._backgroundColor;
   }
+
   function setBackgroundColor(color : Color) : void {
     this._backgroundColor = color;
+  }
+
+  function getOpacity() : number {
+    return this._opacity;
+  }
+
+  function setOpacity(opacity : number) : void {
+    this._opacity = opacity;
   }
 
   function getParent() : View {
@@ -626,6 +670,10 @@ class View implements Responder, Appearance {
 
     this._subviews.push(view);
     view._parent = this;
+
+    if (this._autoExpand && view._frame) {
+       view.expandParentView();
+    }
   }
 
   function onClick(cb : function(:UIMouseEvent):void) : void {
@@ -643,14 +691,32 @@ class View implements Responder, Appearance {
 
     if (this._frame) {
       style.position = "absolute";
-      style.width = this._bounds.size.width as string + "px";
-      style.height = this._bounds.size.height as string + "px";
+      style.width = this._frame.size.width as string + "px";
+      style.height = this._frame.size.height as string + "px";
       style.left = this._frame.origin.x as string + "px";
       style.top = this._frame.origin.y as string + "px";
+      style.opacity = this._opacity as string;
       // TODO _centerのCSS操作
 
     } else {
       style.width = "auto";
+      var self = this;
+      // log "set handler";
+      Application.getInstance().onAfterDOMConstructed((element) -> {
+        // log "loaded handler";
+        // log self._element.offsetWidth;
+        // log self._element.offsetHeight;
+        self.setPosition(new Rectangle(self._element.offsetLeft, 
+                           self._element.offsetTop,
+                           self._element.offsetWidth,
+                           self._element.offsetHeight));
+
+        // TODO expandView?
+         // 追加処理
+         if (self._parent && self._parent._autoExpand) {
+            self.expandParentView();
+         }
+       });
     }
 
     if (Platform.DEBUG) {
@@ -661,6 +727,31 @@ class View implements Responder, Appearance {
       block.appendChild(view.getElement());
     });
     return block;
+  }
+
+  function expandParentView() : void {
+    assert this._parent != null;
+    assert this._parent._autoExpand == true;
+    assert this._frame != null;
+
+    var parent = this._parent;
+
+    var rect : Rectangle;
+    if (parent._frame) {
+      rect  = new Rectangle(parent._frame.origin.x,
+                             parent._frame.origin.y,
+                             parent._frame.size.width + this._frame.size.width,
+                             parent._frame.size.height + this._frame.size.height
+                            );
+    } else {
+      rect = new Rectangle(0,
+                           0,
+                           this._frame.size.width,
+                           this._frame.size.height
+                          );
+
+    }
+    parent.setPosition(rect);
   }
 
   // Controlls the viwwa and subviews
@@ -895,168 +986,379 @@ class NavigationView extends View {
     // log element;
     return element;
   }
-  
 }
 
 class ScrollView extends View {
-   var bounces : boolean = true;
-   var _size : Size; // TODO: frameプロパティを実装する
-   var _contentSize : Size;
-   var pagingEnabled : boolean;
-   var minimumZoomScale : number;
-   var maximumZoomScale : number;
-   var _x : int;
-   var _y : int;
-   var _vx : number;
-   var _vy : number;
+  var bounces : boolean = true;
+  var _alwaysBounceHorizontal : boolean = false;
+  var _alwaysBounceVertical : boolean = false;
 
-   var _title : string;
+  var _contentSize : Size;
+  var pagingEnabled : boolean;
+  var minimumZoomScale : number;
+  var maximumZoomScale : number;
+  var _x : int;
+  var _y : int;
+  var _vx : number;
+  var _vy : number;
 
-   function constructor() {
-      this._size = new Size(320, 480);
-      this._x = 0;
-      this._y = 0;
-   }
+  function constructor() {
+    super(new Rectangle(0, 0, Platform.getWidth(), Platform.getHeight()));
+    this._x = 0;
+    this._y = 0;
+  }
 
-   function setContentSize(size : Size) : void {
-      this._contentSize = size;
-   }
+  function constructor(frame : Rectangle) {
+    super(frame);
+    this._x = frame.origin.x;
+    this._y = frame.origin.y;
+  }
 
-   override function _toElement() : web.HTMLElement {
-      var block = Util.createDiv();
-      var style = block.style;
+  function setContentSize(size : Size) : void {
+    this._contentSize = size;
+  }
 
-      style.backgroundColor = this._backgroundColor.toString();
-      style.width = "auto";
+  override function _toElement() : web.HTMLElement {
+    var block = Util.createDiv();
+    var style = block.style;
 
-      if (this._subviews.length != 0) {
-         style.position = 'relative';
-         style.top = '0px';
-         style.left = '0px';
+    style.backgroundColor = this._backgroundColor.toString();
+    style.width = "auto";
 
-         var prevX = 0;
-         var prevY = 0;
-         var prevMsTime = (new Date()).getTime();
-         block.addEventListener('mousedown', (e) -> {
-            e.preventDefault();
+    if (this._subviews.length != 0) {
+      style.position = 'relative';
+      style.top = '0px';
+      style.left = '0px';
 
-            var me = e as web.MouseEvent;
-            prevX = me.pageX;
-            prevY = me.pageY;
+      var prevX = 0;
+      var prevY = 0;
+      var prevMsTime = (new Date()).getTime();
+      block.addEventListener('mousedown', (e) -> {
+        e.preventDefault();
 
-            var handleMove = function(e : web.Event) : void {
-               e.preventDefault();
+        var me = e as web.MouseEvent;
+        prevX = me.pageX;
+        prevY = me.pageY;
 
-               var curMsTime = (new Date()).getTime();
-               var elapsedMs = curMsTime - prevMsTime;
-               prevMsTime = curMsTime;
+        var handleMove = function(e : web.Event) : void {
+          e.preventDefault();
 
-               var me = e as web.MouseEvent;
-               var diffX = me.pageX - prevX;
-               var diffY = me.pageY - prevY;
+          var curMsTime = (new Date()).getTime();
+          var elapsedMs = curMsTime - prevMsTime;
+          prevMsTime = curMsTime;
 
-               this._vx = diffX / elapsedMs;
-               this._vy = diffY / elapsedMs;
+          var me = e as web.MouseEvent;
+          var diffX = me.pageX - prevX;
+          var diffY = me.pageY - prevY;
 
-               // TODO: 下側と右側にも対応
-               this._x += (this._x > 0) ? (diffX / 2) : (diffX);
-               this._y += (this._y > 0) ? (diffY / 2) : (diffY);
+          this._vx = diffX / elapsedMs;
+          this._vy = diffY / elapsedMs;
 
-               style.top = (this._y as string) + 'px';
-               style.left = (this._x as string) + 'px';
+          // TODO: 下側と右側にも対応
+          this._x += (this._x > 0 || this._x < this._frame.size.width) ? (diffX / 2) : (diffX);
+          this._y += (this._y > 0 || this._y < this._frame.size.height) ? (diffY / 2) : (diffY);
 
-               prevX = me.pageX;
-               prevY = me.pageY;
-            };
+          this._x = this._alwaysBounceVertical ? 0 : this._x;
+          this._y = this._alwaysBounceHorizontal ? 0 : this._y;
+          style.top = (this._y as string) + 'px';
+          style.left = (this._x as string) + 'px';
 
-            block.addEventListener('mousemove', handleMove);
+          prevX = me.pageX;
+          prevY = me.pageY;
+        };
 
-            // バウンドするようなモーションで、表示位置を修正する
-            var backToCorrectPosition = function () : void {
-               var fw = this._size.width;  // frame width
-               var fh = this._size.height; // frame height
-               var cw = this._contentSize.width;  // content width
-               var ch = this._contentSize.height; // content height 
+        block.addEventListener('mousemove', handleMove);
 
-               if (this._x > 0) {
-                  this._x /= 1.1;
-               }
-               if (this._x + cw < fw) {
-                  this._x = (fw - cw) + (this._x + cw - fw) / 1.2;
-               }
-               if (this._y > 0) {
-                  this._y /= 1.1;
-               }
-               if (this._y + ch < fh) {
-                  this._y = (fh - ch) + (this._y + ch - fh) / 1.2;
-               }
-               style.left = (this._x as string) + 'px';
-               style.top = (this._y as string) + 'px';
+        // バウンドするようなモーションで、表示位置を修正する
+        var backToCorrectPosition = function () : void {
 
-               if (this._x > 0 || this._y > 0 || this._x + cw < fw || this._y + ch < fh) {
-                  Timer.setTimeout(backToCorrectPosition, 33);
-               }
-            };
+          // var fw = this._size.width;  // frame width
+          // var fh = this._size.height; // frame height
+          var fw = this._frame.size.width;  
+          var fh = this._frame.size.height; 
+          var cw = this._contentSize.width;  // content width
+          var ch = this._contentSize.height; // content height 
 
-            // 速度を減衰させつつスクロールする
-            var decelerating = function () : void {
-               var fw = this._size.width;  // frame width
-               var fh = this._size.height; // frame height
-               var cw = this._contentSize.width;  // content width
-               var ch = this._contentSize.height; // content height 
+          if (this._x > 0) {
+            this._x /= 1.1;
+          }
+          if (this._x + cw < fw) {
+            this._x = (fw - cw) + (this._x + cw - fw) / 1.2;
+          }
+          if (this._y > 0) {
+            this._y /= 1.1;
+          }
+          if (this._y + ch < fh) {
+            this._y = (fh - ch) + (this._y + ch - fh) / 1.2;
+          }
 
-               this._x += this._vx * 33;
-               this._y += this._vy * 33;
+          this._x = this._alwaysBounceVertical ? 0 : this._x;
+          this._y = this._alwaysBounceHorizontal ? 0 : this._y;
 
-               style.left = (this._x as string) + 'px';
-               style.top = (this._y as string) + 'px';
+          style.left = (this._x as string) + 'px';
+          style.top = (this._y as string) + 'px';
 
-               log this._vy;
+          if (this._x > 0 || this._y > 0 || this._x + cw < fw || this._y + ch < fh) {
+            Timer.setTimeout(backToCorrectPosition, 33);
+          }
+        };
 
-               if (this._x > 0 || this._x + cw < fw) {
-                  this._vx /= 2;
-               } else {
-                  if (Math.abs(this._vx) < 0.01) {
-                     this._vx = 0;
-                  } else if (this._vx < 0) {
-                     this._vx += 0.05;
-                  } else if (this._vx > 0) {
-                     this._vx -= 0.05;
-                  }
-               }
-               if (this._y > 0 || this._y + ch < fh) {
-                  this._vy /= 2;
-               } else {
-                  if (Math.abs(this._vy) < 0.05) {
-                     this._vy = 0;
-                  } else if (this._vy < 0) {
-                     this._vy += 0.05;
-                  } else if (this._vy > 0) {
-                     this._vy -= 0.05;
-                  }
-               }
+        // 速度を減衰させつつスクロールする
+        var decelerating = function () : void {
 
-               if (Math.abs(this._vx) > 0.001 || Math.abs(this._vy) > 0.001) {
-                  Timer.setTimeout(decelerating, 33);
-               } else {
-                  Timer.setTimeout(backToCorrectPosition, 33);
-               }
-            };
+          // var fw = this._size.width;  // frame width
+          // var fh = this._size.height; // frame height
+          var fw = this._frame.size.width;  
+          var fh = this._frame.size.height; 
+          var cw = this._contentSize.width;  // content width
+          var ch = this._contentSize.height; // content height 
 
+          this._x += this._vx * 33;
+          this._y += this._vy * 33;
 
-            block.addEventListener('mouseup', (e) -> {
-               block.removeEventListener('mousemove', handleMove);
-               Timer.setTimeout(decelerating, 33);
-            });
+          this._x = this._alwaysBounceVertical ? 0 : this._x;
+          this._y = this._alwaysBounceHorizontal ? 0 : this._y;
+          style.left = (this._x as string) + 'px';
+          style.top = (this._y as string) + 'px';
+          
+          log this._vy;
 
-         });
-      }
+          if (this._x > 0 || this._x + cw < fw) {
+            this._vx /= 2;
+          } else {
+            if (Math.abs(this._vx) < 0.01) {
+              this._vx = 0;
+            } else if (this._vx < 0) {
+              this._vx += 0.05;
+            } else if (this._vx > 0) {
+              this._vx -= 0.05;
+            }
+          }
+          if (this._y > 0 || this._y + ch < fh) {
+            this._vy /= 2;
+          } else {
+            if (Math.abs(this._vy) < 0.05) {
+              this._vy = 0;
+            } else if (this._vy < 0) {
+              this._vy += 0.05;
+            } else if (this._vy > 0) {
+              this._vy -= 0.05;
+            }
+          }
 
-      this._subviews.forEach( (view) -> {
-         block.appendChild(view.getElement());
+          if (Math.abs(this._vx) > 0.001 || Math.abs(this._vy) > 0.001) {
+            Timer.setTimeout(decelerating, 33);
+          } else {
+            Timer.setTimeout(backToCorrectPosition, 33);
+          }
+        };
+
+        block.addEventListener('mouseup', (e) -> {
+          block.removeEventListener('mousemove', handleMove);
+          Timer.setTimeout(decelerating, 33);
+        });
       });
-      return block;
-   }
+    }
+
+    this._subviews.forEach( (view) -> {
+      block.appendChild(view.getElement());
+    });
+    return block;
+  }
+}
+
+class TableView extends ScrollView {
+
+  // var _title : string;
+  var _cellType : TableViewCell;
+  var _dataSource : Array.<Object>;
+  // var _rowHeight : int;
+  var _separatorStyle : string;
+  var _separatorColor : Color;
+  // var _allowsSelection : boolean;
+  // var _tableHeaderView : View;
+  // var _tableFooterView : View;
+  // var _editing : boolean;
+
+  function constructor () {
+    this._alwaysBounceVertical = true;
+    this._autoExpand = false;
+  }
+
+  function constructor (frame : Rectangle) {
+    super(frame);
+    this.setContentSize(frame.size);
+    this._alwaysBounceVertical = true;
+    this._autoExpand = false;
+  }
+
+  function getSeparatorColor() : Color {
+    return this._separatorColor;
+  }
+
+  function setSeparatorColor(color : Color) : void {
+    this._separatorColor = color;
+  }
+
+  function setDataSource(url : string) : void {
+
+    var httpRequest = new web.XMLHttpRequest();
+    httpRequest.open('GET', url, true);
+    var self = this;
+    httpRequest.onreadystatechange = (e) -> {
+      if(httpRequest.readyState == 4) {
+        if(httpRequest.status == 200) {
+          var data = JSON.parse(httpRequest.responseText) as Array.<Object>;
+          log data;
+          self._dataSource = data;
+          self.refreshThisElement();        
+
+          // Todo: refresh elements.
+        }
+      }
+    };
+    httpRequest.send();
+  }
+
+  function setDataSource(ds : Array.<Object>) : void {
+    this._dataSource = ds;
+  }
+
+  function setCellType(cell : TableViewCell) : void {
+    this._cellType = cell;
+  }
+
+  function refreshThisElement() : void {
+    var oldElement = this.getElement();
+    log oldElement;
+    this.setChildren(oldElement);
+    // var newElement = this.createTableElement();
+    // log "created elm: ";
+    // log newElement;
+    // Util.replaceChildElements(oldElement, newElement);
+  }
+
+
+  function setChildren(parent : web.HTMLElement) : void {
+    // assert this._cellType != null;
+    // assert this._dataSource != null;
+
+    this._dataSource.forEach( (tw) -> {
+      var tweet = new Tweet(tw);
+
+      var cell = new TableViewCell();
+      // cell._autoExpand = false;
+      cell.setImage(tweet.profile_image_url);
+      cell.setText(tweet.screen_name);
+      cell.setDetailTextLabel(tweet.text);
+      parent.appendChild(cell.getElement());
+      // log cell;
+      // this.addSubview(cell);
+    });
+  }
+
+  function createTableElement() : web.HTMLElement {
+    assert this._cellType != null;
+    assert this._dataSource != null;
+
+    var element = super._toElement();
+    this._dataSource.forEach( (tw) -> {
+      var tweet = new Tweet(tw);
+
+      var cell = new TableViewCell();
+      // cell._autoExpand = false;
+      cell.setImage(tweet.profile_image_url);
+      cell.setText(tweet.screen_name);
+      cell.setDetailTextLabel(tweet.text);
+      element.appendChild(cell.getElement());
+      // log cell;
+      // this.addSubview(cell);
+    });
+    return element;
+  }
+  
+  override function _toElement() : web.HTMLElement {
+    var scrollViewElement = super._toElement();  
+//    if (this._dataSource && this._cellType){
+//      var tableElement = this.createTableElement();
+//      scrollViewElement.appendChild(tableElement);
+//    }
+    return scrollViewElement;
+  }
+}
+
+
+class Tweet {
+
+  var created_at : string;
+  var text: string;
+  var screen_name : string;
+  var user_id: int;
+  var profile_image_url : string;
+
+  function constructor (data : variant) {
+
+    this.created_at = data['created_at'] as string;
+    this.text = data['text'] as string;
+
+    var user = data['user'];
+    this.screen_name = user['screen_name'] as string;
+    this.user_id = user['id'] as int;
+    this.profile_image_url = user['profile_image_url'] as string;
+  }
+}
+
+// class TableViewController extends ViewController {
+// }
+
+class TableViewCell extends View {
+
+  // var _contentView : View;
+  var _detailTextLabel : Label;
+  var _image : Image;
+  var _imageView : ImageView;
+  // var _selected : boolean;
+  var _text : string;
+  var _textColor : Color;
+
+  function constructor() {
+  }
+
+  function setImage(resource : string) : void {
+
+    this._image = new Image(resource);
+    this._imageView = new ImageView(this._image);
+  }
+
+  function setText(resource : string) : void {
+    this._text = resource;
+  }
+
+  function setDetailTextLabel(resource : string) : void {
+    this._detailTextLabel = new Label(resource);
+  }
+
+  override function _toElement() : web.HTMLElement {
+
+    var block = super._toElement();
+
+    if (this._imageView) {
+      block.appendChild(this._imageView.getElement());
+    }
+
+    if (this._text) {
+      var textElement = Util.createElement("Strong");
+      textElement.style.padding = "0px 0px 0px 15px";
+      textElement.appendChild(Util.createTextNode(this._text));
+      block.appendChild(textElement);
+    }
+
+    if (this._detailTextLabel) {
+      block.appendChild(this._detailTextLabel.getElement());
+    }
+
+    return block;
+  }
 }
 
 class Control extends View {
@@ -1068,10 +1370,13 @@ class Label extends View {
   var _color : Color = Color.DARK_TEXT;
   var _align : string;
 
-  function constructor() {
+  function constructor(text : string) {
+    super();
+    this.setText(text);
   }
 
-  function constructor(text : string) {
+  function constructor(text : string, frame : Rectangle) {
+    super(frame);
     this.setText(text);
   }
 
@@ -1115,7 +1420,6 @@ class Label extends View {
     style.borderRadius = "8px";
     Util.applyGradient(style, "linear", "left top", "left bottom", Color.WHITE, Color.LIGHT_GRAY);
 
-
     return element;
   }
 }
@@ -1129,7 +1433,8 @@ class Image {
 
     var self = this;
     this.imageRef.onload = (e) -> {
-      self.setSize(new Size(self.getImageRef().naturalWidth, self.getImageRef().naturalHeight));
+      var s = new Size(self.getImageRef().naturalWidth, self.getImageRef().naturalHeight);
+      self.setSize(s);
     };
   }
   
@@ -1153,7 +1458,29 @@ class Image {
 class ImageView extends View {
   var _image : Image;
 
+
   function constructor(image : Image) {
+
+    // ここでsuper(new Rectangle(0, 0, image.getSize()) 呼び出して
+    // _frameを初期化したいが, imageがonloadされていないため
+    // 無名関数で_frameを調整する
+
+    super();
+    this._image = image;
+    var self = this;
+    this._image.imageRef.onload = (e) -> {
+      var size = new Size(image.getImageRef().naturalWidth, 
+                          image.getImageRef().naturalHeight);
+
+      // super class のconstructor処理
+      self._frame = new Rectangle(0, 0, size);
+      self._bounds = new Rectangle(0, 0, size);
+      self._center = new Point(size.width/2, size.height/2);
+    };
+  }
+
+  function constructor(image : Image, frame : Rectangle) {
+    super(frame);
     this._image = image;
   }
 
@@ -1169,6 +1496,9 @@ class ImageView extends View {
       style.left = this._frame.origin.x as string + "px";
       style.top = this._frame.origin.y as string + "px";
       // TODO _centerのCSS操作
+    } else {
+      style.width = "auto";
+      style.height = "auto";
     }
     return element;
   }
@@ -1207,7 +1537,9 @@ class ProgressView extends View {
 
   override function _toElement() : web.HTMLProgressElement {
     // assert this._content != null;
-    // var element = super._toElement(); // <div>
+    var element1 = super._toElement(); // <div>
+    log element1;
+
     var element = Util.createElement("progress") as web.HTMLProgressElement;
 
     var style = element.style;
@@ -1376,7 +1708,6 @@ class TextField extends Control {
 
     return element;
   }
-
 }
 
 
