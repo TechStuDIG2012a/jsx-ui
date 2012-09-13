@@ -16,7 +16,7 @@ class MyApp extends ui.Application {
 
   function constructor() {
 
-    var mainView = new ui.View();
+    // var mainView = new ui.View();
     // var label = new ui.Label("timeline test");
     // mainView.addSubview(label);
 
@@ -30,10 +30,12 @@ class MyApp extends ui.Application {
     tableView.setContentSize(new ui.Size(320, 5600));
     log "tableView";
     log tableView;
-    mainView.addSubview(tableView);
+    // mainView.addSubview(tableView);
 
     var rootController = new ui.ViewController();
-    rootController.setView(mainView);
+    // rootController.setView(mainView);
+    rootController.setView(tableView);
+
 
 
     this.setRootViewController(rootController);

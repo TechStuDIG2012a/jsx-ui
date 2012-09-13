@@ -3,48 +3,32 @@ import "js/web.jsx";
 import "console.jsx";
 
 class _Main {
-  static function main(args : string[]) : void {
-    console.time("application loading");
+	static function main(args : string[]) : void {
+		console.time("application loading");
 
-    var app = new MyApp();
-    app.attach(dom.id("world"));
-    console.timeEnd("application loading");
-  }
+		var app = new MyApp();
+		app.attach(dom.id("world"));
+		console.timeEnd("application loading");
+	}
 }
 
 class MyApp extends ui.Application {
+	function constructor() {
+		var top = new ui.ViewController();
+		this.setRootViewController(top);
 
-  function constructor() {
+    var scrollView = new ui.ScrollView();
+    scrollView._autoExpand = false;
+    scrollView._alwaysBounceVertical = true;
+    scrollView.setContentSize(new ui.Size(320, 3600));
 
-    var rootController = new ui.ViewController();
-
-    var mainView = new ui.View();
-
-    // add title label.
-    var label = new ui.Label("table view test");
-    mainView.addSubview(label);
-
-    // add tableView.
-    var rect = new ui.Rectangle(0, 26, ui.Platform.getWidth(), ui.Platform.getHeight()-26);
-    var tableView = new ui.TableView(rect);
-
-    // var url = "http://api.twitter.com/1/statuses/public_timeline.json?trim_user=twitter";
-    // tableView.setDataSource(url);
-    // var data = JSON.parse('[{"name": "hoge1"}, {"name": "hoge2"}, {"name": "hoge3"}, {"name": "hoge4"}]') as Array.<Object>;
-
-    var data = JSON.parse('[{"name": "hoge1"}, {"name": "hoge2"}, {"name": "hoge3"}, {"name": "hoge4"}]') as Array.<Object>;
-    data.forEach( (e) -> {
-      log e;
-    });
-
-    tableView.setDataSource(data);
-
-    // tableView.setCellType();
-    // tableView.setContentSize(new ui.Size(320, 5600));
-
-    // mainView.addSubview(tableView);
-    rootController.setView(mainView);
-    this.setRootViewController(rootController);
-  }
+    for (var i=0; i<10; i++){
+      var tableViewCell = new ui.TableViewCell();
+      tableViewCell.setImage("http://a0.twimg.com/profile_images/976807881/face_normal.jpg");
+      tableViewCell.setText("screen_name");
+      // tableViewCell.setDetailTextLabel("draw a tweet here. \n **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** ****.");
+      scrollView.addSubview(tableViewCell);
+    }
+		top.setView(scrollView);
+	}
 }
-

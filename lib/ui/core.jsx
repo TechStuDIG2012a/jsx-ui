@@ -509,7 +509,7 @@ class View implements Responder, Appearance {
         // log "loaded handler";
         // log self._element.offsetWidth;
         // log self._element.offsetHeight;
-        self.setPosition(new Rectangle(self._element.offsetLeft, 
+        self.initWithFrame(new Rectangle(self._element.offsetLeft, 
                            self._element.offsetTop,
                            self._element.offsetWidth,
                            self._element.offsetHeight));
@@ -554,7 +554,7 @@ class View implements Responder, Appearance {
                           );
 
     }
-    parent.setPosition(rect);
+    parent.initWithFrame(rect);
   }
 
   // Controlls the viwwa and subviews
@@ -1041,10 +1041,10 @@ class TableView extends ScrollView {
   
   override function _toElement() : web.HTMLElement {
     var scrollViewElement = super._toElement();  
-//    if (this._dataSource && this._cellType){
-//      var tableElement = this.createTableElement();
-//      scrollViewElement.appendChild(tableElement);
-//    }
+    if (this._dataSource && this._cellType){
+      var tableElement = this.createTableElement();
+      scrollViewElement.appendChild(tableElement);
+    }
     return scrollViewElement;
   }
 }
