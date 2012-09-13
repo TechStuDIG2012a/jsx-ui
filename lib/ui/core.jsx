@@ -878,7 +878,7 @@ class NavigationView extends View {
 //    headerStyle.position = "fixed";
 
     h1Style.margin = "0 auto";
-    h1Style.width = "140px";
+    h1Style.width = "auto";
     h1Style.overflow = "hidden";
 //    h1Style.color = "#333333";
     h1Style.color = this._titleColor.toString();
@@ -887,9 +887,10 @@ class NavigationView extends View {
     h1Style.whiteSpace = "nowrap";
     h1Style.textOverflow = "ellipsis";
     h1Style.textShadow = "0 1px #ffffff";
+    h1Style.boxShadow = "1px 1px 6px #000";
     
     //return header;
-    element.style.zIndex = "5";
+    element.style.zIndex = "50";
     element.appendChild(header);
     // log element;
     return element;
