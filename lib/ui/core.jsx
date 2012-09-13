@@ -449,6 +449,10 @@ class NavigationController extends ViewController {
   // var _navigationView : NavigationView = null;
   var _navigationViewStack : Array.<NavigationView>;
   var _mainView : View;
+
+  var _navigationViewHeaderColor : Color = Color.LIGHT_GRAY;
+  var _navigationViewTitleColor : Color = Color.DARK_GRAY;
+  var _navigationViewTitle : string;
   
   function constructor() {
     this._stack = new Array.<ViewController>;
@@ -475,15 +479,24 @@ class NavigationController extends ViewController {
   //   this._view.getElement().appendChild(this._navigationView.getElement());
   // }
 
- function getStack() : Array.<ViewController> {
+  function getStack() : Array.<ViewController> {
     return this._stack;
   }
 
- function getNavigationViewStack() : Array.<NavigationView> {
+  function getNavigationViewStack() : Array.<NavigationView> {
     return this._navigationViewStack;
   }
 
+  function setNavigationViewColor(headerColor : Color, titleColor : Color) : void {
+    log "setcolor";
+    this._navigationViewHeaderColor = headerColor;
+    this._navigationViewTitleColor = titleColor;
+  }
+
   function pushViewController(vc : ViewController, title : string) : void {
+    log "push";
+    this._navigationViewTitle = title;
+
     // change foreseen view !
 
     // remove old view!
@@ -504,7 +517,9 @@ class NavigationController extends ViewController {
     this._mainView.getElement().appendChild(vc.getView().getElement());
 
     var newNV = new NavigationView();
-    newNV.setTitle(title);
+    newNV.setHeaderColor(this._navigationViewHeaderColor);
+    newNV.setTitleColor(this._navigationViewTitleColor);
+    newNV.setTitle(this._navigationViewTitle);
     var navRect = new Rectangle(0, 0, Platform.getWidth(), 45);
     newNV.initWithFrame(navRect);
     if (this._stack.length > 1) {
@@ -791,8 +806,8 @@ class NavigationView extends View {
   var _rightHref : string = "";
   var _leftOnclick : function(:web.Event):void;
   var _rightOnclick : function(:web.Event):void;
-  var _titleColor : Color = Color.DARK_GRAY;
-  var _headerColor : Color = Color.LIGHT_GRAY;
+  var _titleColor : Color;
+  var _headerColor : Color;
 
   function constructor() {
   }
