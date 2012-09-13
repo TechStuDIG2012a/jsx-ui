@@ -1225,10 +1225,10 @@ class TableView extends ScrollView {
   
   override function _toElement() : web.HTMLElement {
     var scrollViewElement = super._toElement();  
-//    if (this._dataSource && this._cellType){
-//      var tableElement = this.createTableElement();
-//      scrollViewElement.appendChild(tableElement);
-//    }
+    if (this._dataSource && this._cellType){
+      var tableElement = this.createTableElement();
+      scrollViewElement.appendChild(tableElement);
+    }
     return scrollViewElement;
   }
 }

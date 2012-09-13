@@ -15,14 +15,10 @@ class _Main {
 class MyApp extends ui.Application {
 
   function constructor() {
-
-    //var mainView = new ui.View(new ui.Rectangle(0, 0, ui.Platform.getWidth(), ui.Platform.getHeight()));
-    //var mainView = new ui.View(new ui.Rectangle(0, 0, 320, 480));
     var mainView = new ui.View();
-    mainView.setBackgroundColor(ui.Color.RED);
-    
-    // var label = new ui.Label("timeline test");
-    // mainView.addSubview(label);
+
+    var label = new ui.Label("timeline test");
+    mainView.addSubview(label);
 
     var tableView = new ui.TableView(new ui.Rectangle(0, 26, ui.Platform.getWidth(), ui.Platform.getHeight()-26));
     tableView._alwaysBounceVertical = true;
@@ -37,8 +33,8 @@ class MyApp extends ui.Application {
     mainView.addSubview(tableView);
 
     var rootController = new ui.ViewController();
+
     rootController.setView(mainView);
-//    rootController.setView(tableView);
 
     this.setRootViewController(rootController);
     // this.setTimeline();
