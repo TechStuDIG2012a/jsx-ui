@@ -17,11 +17,23 @@ class MyApp extends ui.Application {
 		var top = new ui.ViewController();
 		this.setRootViewController(top);
 
-		var tableViewCell = new ui.TableViewCell();
+
+    var scrollView = new ui.ScrollView();
+    scrollView._autoExpand = false;
+    scrollView.setContentSize(new ui.Size(320, 5600));
+
+    for (var i=0; i<10; i++){
+      var tableViewCell = new ui.TableViewCell();
     
-    tableViewCell.setImage("http://a0.twimg.com/profile_images/976807881/face_normal.jpg");
-    tableViewCell.setText("screen_name");
-    tableViewCell.setDetailTextLabel("draw a tweet here. \n **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** ****.");
-		top.setView(tableViewCell);
+      tableViewCell.setImage("http://a0.twimg.com/profile_images/976807881/face_normal.jpg");
+      tableViewCell.setText("screen_name");
+      tableViewCell.setDetailTextLabel("draw a tweet here. \n **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** ****.");
+
+      scrollView.addSubview(tableViewCell);
+    }
+
+		// top.setView(tableViewCell);
+		top.setView(scrollView);
+
 	}
 }

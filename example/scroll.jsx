@@ -18,15 +18,17 @@ class MyApp extends ui.Application {
   function constructor() {
     var scrollView = new ui.ScrollView();
     var listView = this.createLabelListView();
-    scrollView.addSubview(listView);
+    // scrollView.addSubview(listView);
     scrollView._autoExpand = false;
     // scrollView._alwaysBounceVertical = true;
     log listView._frame;
     scrollView.setContentSize(new ui.Size(320, 5600));
 
-    // var iv = this.createImageView();
+    var iv = this.createImageView();
+    var iv2 = this.createImageView();
     // log iv;
-    // scrollView.addSubview(iv);
+    scrollView.addSubview(iv);
+    scrollView.addSubview(iv2);
     // // onloadされていないため、ImageViewのframe指定
     // // を直接しない場合は_bounds.sizeを読み込めない.
     // // TODO: 回避する処理を実装する

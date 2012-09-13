@@ -992,8 +992,31 @@ class TableView extends ScrollView {
 
   function refreshThisElement() : void {
     var oldElement = this.getElement();
-    var newElement = this.createTableElement();
-    Util.replaceChildElements(oldElement, newElement);
+    log oldElement;
+    this.setChildren(oldElement);
+    // var newElement = this.createTableElement();
+    // log "created elm: ";
+    // log newElement;
+    // Util.replaceChildElements(oldElement, newElement);
+  }
+
+
+  function setChildren(parent : web.HTMLElement) : void {
+    // assert this._cellType != null;
+    // assert this._dataSource != null;
+
+    this._dataSource.forEach( (tw) -> {
+      var tweet = new Tweet(tw);
+
+      var cell = new TableViewCell();
+      // cell._autoExpand = false;
+      cell.setImage(tweet.profile_image_url);
+      cell.setText(tweet.screen_name);
+      cell.setDetailTextLabel(tweet.text);
+      parent.appendChild(cell.getElement());
+      // log cell;
+      // this.addSubview(cell);
+    });
   }
 
   function createTableElement() : web.HTMLElement {
@@ -1010,15 +1033,14 @@ class TableView extends ScrollView {
       cell.setText(tweet.screen_name);
       cell.setDetailTextLabel(tweet.text);
       element.appendChild(cell.getElement());
-      log cell;
-      this.addSubview(cell);
+      // log cell;
+      // this.addSubview(cell);
     });
     return element;
   }
   
   override function _toElement() : web.HTMLElement {
     var scrollViewElement = super._toElement();  
-
 //    if (this._dataSource && this._cellType){
 //      var tableElement = this.createTableElement();
 //      scrollViewElement.appendChild(tableElement);
