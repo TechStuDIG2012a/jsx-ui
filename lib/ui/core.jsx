@@ -791,6 +791,8 @@ class NavigationView extends View {
   var _rightHref : string = "";
   var _leftOnclick : function(:web.Event):void;
   var _rightOnclick : function(:web.Event):void;
+  var _titleColor : Color = Color.DARK_GRAY;
+  var _headerColor : Color = Color.LIGHT_GRAY;
 
   function constructor() {
   }
@@ -801,6 +803,14 @@ class NavigationView extends View {
 
   function setTitle(title : web.Node) : void {
     this._title = title;
+  }
+
+  function setTitleColor(color : Color) : void {
+    this._titleColor = color;
+  }
+
+  function setHeaderColor(color : Color) : void {
+    this._headerColor = color;
   }
 
   function setLeftButton(anchorText : string, href : string, onclick : function(:web.Event):void) : void {
@@ -848,13 +858,15 @@ class NavigationView extends View {
     headerStyle.borderBottom = Util.borderWithColor(Color.WHITE);
     // headerStyle.height = "44px";
     headerStyle.lineHeight = "44px";
-    headerStyle.backgroundColor = "#a8a8a8";
+//    headerStyle.backgroundColor = "#a8a8a8";
+    headerStyle.backgroundColor = this._headerColor.toString();
 //    headerStyle.position = "fixed";
 
     h1Style.margin = "0 auto";
     h1Style.width = "140px";
     h1Style.overflow = "hidden";
-    h1Style.color = "#333333";
+//    h1Style.color = "#333333";
+    h1Style.color = this._titleColor.toString();
     h1Style.fontSize = "16px";
     h1Style.textAlign = "center";
     h1Style.whiteSpace = "nowrap";
